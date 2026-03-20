@@ -1,0 +1,162 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "avatar": { "type": "string" },
+        "profiles": { "type": "array", "items": { "type": "string" } },
+        "activityStatus": { "type": "string", "enum": ["Activo", "De Baja"] },
+        "locationStatus": { "type": "string", "enum": ["En el centro", "Fuera del centro"] },
+        "contractType": { "type": "string", "enum": ["Fijo", "Interino"] },
+        "roleType": { "type": "string", "enum": ["Titular", "Sustituto"] },
+        "classroomId": { "type": "string" },
+        "phone": { "type": "string" },
+        "secondaryPhone": { "type": "string" },
+        "address": { "type": "string" },
+        "studentSimulatedProfile": { "type": "string", "enum": ["teacher", "almacen"] }
+      },
+      "required": ["id", "name", "email", "profiles", "activityStatus", "locationStatus"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Product information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "reference": { "type": "string" },
+        "unit": { "type": "string" },
+        "suppliers": { "type": "array", "items": { "$ref": "ProductSupplier" } },
+        "tax": { "type": "number" },
+        "category": { "type": "string" },
+        "family": { "type": "string" },
+        "allergens": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["Activo", "Inactivo"] },
+        "productState": { "type": "string" },
+        "warehouseStatus": { "type": "string" }
+      },
+      "required": ["id", "name", "reference", "unit", "tax", "category", "family", "status"]
+    },
+    "ProductSupplier": {
+      "title": "ProductSupplier",
+      "type": "object",
+      "properties": {
+        "supplierId": { "type": "string" },
+        "price": { "type": "number" }
+      }
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Supplier information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "cif": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "contactPerson": { "type": "string" },
+        "status": { "type": "string", "enum": ["Activo", "Inactivo"] },
+        "website": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "name", "cif", "status"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Event information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["Regular", "Extraordinario"] },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "budgetPerTeacher": { "type": "number" },
+        "authorizedTeachers": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["Activo", "Inactivo"] }
+      },
+      "required": ["id", "name", "type", "startDate", "endDate", "budgetPerTeacher", "status"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Order information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" },
+        "eventId": { "type": "string" },
+        "items": { "type": "array", "items": { "$ref": "OrderItem" } },
+        "cost": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "userId", "date", "status", "eventId", "items"]
+    },
+    "OrderItem": {
+      "title": "OrderItem",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "price": { "type": "number" },
+        "tax": { "type": "number" }
+      }
+    },
+    "Recipe": {
+      "title": "Recipe",
+      "description": "Recipe information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "authorId": { "type": "string" },
+        "yieldAmount": { "type": "number" },
+        "yieldUnit": { "type": "string" },
+        "category": { "type": "string" },
+        "ingredients": { "type": "array", "items": { "$ref": "RecipeIngredient" } },
+        "preparationSteps": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "cost": { "type": "number" },
+        "price": { "type": "number" }
+      },
+      "required": ["id", "name", "authorId", "yieldAmount", "yieldUnit", "category", "ingredients", "preparationSteps", "isPublic", "cost", "price"]
+    },
+    "RecipeIngredient": {
+      "title": "RecipeIngredient",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users": { "schema": "User", "description": "Collection of users" },
+    "/products": { "schema": "Product", "description": "Collection of products" },
+    "/suppliers": { "schema": "Supplier", "description": "Collection of suppliers" },
+    "/events": { "schema": "Event", "description": "Collection of events" },
+    "/orders": { "schema": "Order", "description": "Collection of orders" },
+    "/recipes": { "schema": "Recipe", "description": "Collection of recipes" },
+    "/incidents": { "schema": "Incident", "description": "Collection of incidents" },
+    "/sales": { "schema": "Sale", "description": "Collection of sales" },
+    "/messages": { "schema": "Message", "description": "Collection of messages" },
+    "/classrooms": { "schema": "Classroom", "description": "Collection of classrooms" },
+    "/classroomProducts": { "schema": "ClassroomProduct", "description": "Collection of classroom products" },
+    "/classroomSuppliers": { "schema": "ClassroomSupplier", "description": "Collection of classroom suppliers" },
+    "/classroomEvents": { "schema": "ClassroomEvent", "description": "Collection of classroom events" },
+    "/classroomOrders": { "schema": "ClassroomOrder", "description": "Collection of classroom orders" },
+    "/serviceGroups": { "schema": "ServiceGroup", "description": "Collection of service groups" },
+    "/services": { "schema": "Service", "description": "Collection of services" }
+  }
+}

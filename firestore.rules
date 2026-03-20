@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profiles.hasAny(['admin', 'creator']) ||
+          ((request.auth.token.email == "jcbprofesor@gmail.com" || request.auth.token.email == "managerproapp@gmail.com") && request.auth.token.email_verified == true));
+    }
+
+    function isAlmacen() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profiles.hasAny(['almacen', 'admin', 'creator']);
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profiles.hasAny(['teacher', 'admin', 'creator']);
+    }
+
+    function isStudent() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profiles.hasAny(['student', 'admin', 'creator']);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isOwner(userId);
+      allow update: if isAdmin() || isOwner(userId);
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if isAlmacen();
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated();
+      allow write: if isAlmacen();
+    }
+
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAuthenticated();
+      allow create: if isTeacher() || isAlmacen();
+      allow update: if isTeacher() || isAlmacen();
+      allow delete: if isAdmin();
+    }
+
+    match /recipes/{recipeId} {
+      allow read: if isAuthenticated();
+      allow create: if isTeacher();
+      allow update: if isTeacher() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin() || (isTeacher() && resource.data.authorId == request.auth.uid);
+    }
+
+    match /incidents/{incidentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAlmacen() || isTeacher();
+    }
+
+    match /sales/{saleId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.recipientIds || resource.data.senderId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid in resource.data.recipientIds);
+    }
+
+    match /classrooms/{classroomId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /classroomProducts/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher() || isStudent();
+    }
+
+    match /classroomSuppliers/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher() || isStudent();
+    }
+
+    match /classroomEvents/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /classroomOrders/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isStudent() || isTeacher();
+    }
+
+    match /serviceGroups/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /services/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isTeacher();
+    }
+  }
+}
