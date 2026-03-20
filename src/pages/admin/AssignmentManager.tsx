@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { Card } from '../../components/Card';
-import { Assignment, Profile, TrainingCycle, Module, Group, SUPER_USER_EMAIL } from '../../types';
+import { Assignment, Profile, TrainingCycle, Module, Group, SUPER_USER_EMAILS } from '../../types';
 import { AssignmentIcon, PlusIcon, TrashIcon, PencilIcon, DownloadIcon } from '../../components/icons';
 import { Modal } from '../../components/Modal';
 import { printPage } from '../../utils/export';
@@ -20,7 +20,7 @@ export const AssignmentManager: React.FC = () => {
     const [newModule, setNewModule] = useState<Partial<Module> | null>(null);
     const [newGroup, setNewGroup] = useState<Partial<Group> | null>(null);
 
-    const teachers = useMemo(() => users.filter(u => u.profiles.includes(Profile.TEACHER) && u.email !== SUPER_USER_EMAIL), [users]);
+    const teachers = useMemo(() => users.filter(u => u.profiles.includes(Profile.TEACHER) && !SUPER_USER_EMAILS.includes(u.email)), [users]);
 
     const assignmentsMap = useMemo(() => {
         const map = new Map<string, string>(); // groupId -> userId

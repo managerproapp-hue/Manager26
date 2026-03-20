@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/Card';
 import { Modal } from '../../components/Modal';
 import { PlusIcon, DownloadIcon } from '../../components/icons';
-import { Message, User, Profile, SUPER_USER_EMAIL } from '../../types';
+import { Message, User, Profile, SUPER_USER_EMAILS } from '../../types';
 import { downloadJson } from '../../utils/export';
 
 export const ComposeMessageModal: React.FC<{ 
@@ -23,7 +23,7 @@ export const ComposeMessageModal: React.FC<{
     const isStudent = currentUser?.profiles.includes(Profile.STUDENT);
 
     const recipientOptions = useMemo(() => {
-        const potentialRecipients = users.filter(u => u.id !== currentUser?.id && u.email !== SUPER_USER_EMAIL);
+        const potentialRecipients = users.filter(u => u.id !== currentUser?.id && !SUPER_USER_EMAILS.includes(u.email));
 
         if (isStudent && currentUser?.classroomId) {
             const myClassroom = classrooms.find(c => c.id === currentUser.classroomId);
@@ -38,7 +38,7 @@ export const ComposeMessageModal: React.FC<{
     }, [users, currentUser, isStudent, classrooms]);
     
     const handleSelectGroup = (profile: Profile) => {
-        const groupIds = users.filter(u => u.profiles.includes(profile) && u.id !== currentUser?.id && u.email !== SUPER_USER_EMAIL).map(u => u.id);
+        const groupIds = users.filter(u => u.profiles.includes(profile) && u.id !== currentUser?.id && !SUPER_USER_EMAILS.includes(u.email)).map(u => u.id);
         const newRecipients = Array.from(new Set([...recipients, ...groupIds]));
         setRecipients(newRecipients);
     }

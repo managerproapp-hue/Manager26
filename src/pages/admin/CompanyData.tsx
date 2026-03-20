@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useCompany } from '../../contexts/CompanyContext';
 import { Card } from '../../components/Card';
 import { CompanyIcon } from '../../components/icons';
-import { Company, Profile, User, SUPER_USER_EMAIL } from '../../types';
+import { Company, Profile, User, SUPER_USER_EMAILS } from '../../types';
 import { useData } from '../../contexts/DataContext';
 
 export const CompanyData: React.FC = () => {
@@ -14,7 +14,7 @@ export const CompanyData: React.FC = () => {
   const [isSaved, setIsSaved] = useState(false);
 
   // FIX: Replaced Profile.MANAGER with Profile.ALMACEN, which exists in the enum.
-  const managerUsers = useMemo(() => users.filter(u => u.profiles.includes(Profile.ALMACEN) && u.email !== SUPER_USER_EMAIL), [users]);
+  const managerUsers = useMemo(() => users.filter(u => u.profiles.includes(Profile.ALMACEN) && !SUPER_USER_EMAILS.includes(u.email)), [users]);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

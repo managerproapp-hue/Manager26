@@ -4,7 +4,7 @@ import { useData } from '../../contexts/DataContext';
 import { Card } from '../../components/Card';
 import { ExpenseIcon, DownloadIcon, UsersIcon, ProductIcon } from '../../components/icons';
 import { printPage, exportToCsv } from '../../utils/export';
-import { Profile, SUPER_USER_EMAIL } from '../../types';
+import { Profile, SUPER_USER_EMAILS } from '../../types';
 
 const formatCurrency = (amount: number) => amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 
@@ -19,7 +19,7 @@ export const ExpenseManager: React.FC = () => {
     const { orders, sales, users, assignments, groups, modules, trainingCycles, suppliers, products } = useData();
 
     const analysisData = useMemo(() => {
-        const teachers = users.filter(u => u.profiles.includes(Profile.TEACHER) && u.email !== SUPER_USER_EMAIL);
+        const teachers = users.filter(u => u.profiles.includes(Profile.TEACHER) && !SUPER_USER_EMAILS.includes(u.email));
         const completedOrders = orders.filter(o => o.status === 'Completado');
         
         const gastoTotal = completedOrders.reduce((sum, order) => sum + (order.cost || 0), 0);

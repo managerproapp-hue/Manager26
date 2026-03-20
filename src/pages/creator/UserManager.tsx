@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/Card';
 import { Modal } from '../../components/Modal';
 import { PlusIcon, DownloadIcon } from '../../components/icons';
-import { User, Profile, getProfileDisplayName, SUPER_USER_EMAIL } from '../../types';
+import { User, Profile, getProfileDisplayName, SUPER_USER_EMAILS } from '../../types';
 import { Avatar } from '../../components/Avatar';
 import { exportToCsv } from '../../utils/export';
 
@@ -16,7 +16,7 @@ export const UserManager: React.FC = () => {
     const [filter, setFilter] = useState<string>('');
     
     const filteredUsers = useMemo(() => {
-        const displayableUsers = users.filter(u => u.email !== SUPER_USER_EMAIL);
+        const displayableUsers = users.filter(u => !SUPER_USER_EMAILS.includes(u.email));
         if (!filter) return displayableUsers;
         return displayableUsers.filter(u => u.name.toLowerCase().includes(filter.toLowerCase()) || u.email.toLowerCase().includes(filter.toLowerCase()));
     }, [users, filter]);
