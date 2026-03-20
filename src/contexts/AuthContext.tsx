@@ -140,10 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
-      console.log('AuthContext - Starting Google Login');
+      console.log('AuthContext - Starting Google Login. authDomain:', (auth.app.options as any).authDomain);
       const provider = new GoogleAuthProvider();
-      // Forzar el dominio de autenticación para evitar interferencias de Vercel
-      auth.config.authDomain = firebaseConfig.authDomain;
       const result = await signInWithPopup(auth, provider);
       console.log('AuthContext - Google Login successful for:', result.user.email);
       return true;
