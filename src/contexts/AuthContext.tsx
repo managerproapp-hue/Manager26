@@ -104,8 +104,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password?: string): Promise<boolean> => {
     try {
       if (!password) return false;
-      await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle the rest
+      
+      // Try Supabase first
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        // Fallback to Firebase for existing users if needed
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      
       return true;
     } catch (error) {
       console.error('Login error:', error);
@@ -116,7 +126,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password?: string): Promise<boolean> => {
     try {
       if (!password) return false;
-      await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Sign up in Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Also create in Firebase for sync if needed
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } catch (e) {
+        console.warn('Firebase signup sync failed:', e);
+      }
+
       return true;
     } catch (error) {
       console.error('Sign up error:', error);
