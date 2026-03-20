@@ -1,16 +1,5 @@
 import React, { createContext, useContext, useMemo, useCallback, useEffect, useState } from 'react';
-import { 
-    collection, 
-    onSnapshot, 
-    doc, 
-    setDoc, 
-    deleteDoc, 
-    query, 
-    where,
-    getDocs,
-    writeBatch
-} from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { initialData } from '../services/dataService';
 import { demoData } from '../services/demoDataService';
@@ -94,15 +83,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [services, setServicesState] = useState<Service[]>([]);
     const { currentUser } = useAuth();
 
-    // Helper to sync collection
+    // Helper to sync collection with Supabase
     useEffect(() => {
         if (!currentUser) {
             console.log('DataProvider - No user, skipping listeners');
             return;
         }
 
-        console.log('DataProvider - User authenticated, attaching listeners');
-        const collections: any[] = [
+        const collections: { name: string, setter: (data: any) => void }[] = [
             { name: 'users', setter: setUsersState },
             { name: 'products', setter: setProductsState },
             { name: 'suppliers', setter: setSuppliersState },
@@ -126,47 +114,52 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             { name: 'services', setter: setServicesState },
         ];
 
-        const unsubscribes = collections.map(col => {
-            return onSnapshot(collection(db, col.name), (snapshot: any) => {
-                const data = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
-                col.setter(data as any);
-            }, (error: any) => {
-                console.error(`Error fetching ${col.name}:`, error);
-                if (error.message?.includes('insufficient permissions')) {
-                    console.warn(`Permission denied for ${col.name}. This is expected if you are not an admin.`);
+        const fetchData = async () => {
+            for (const col of collections) {
+                const { data, error } = await supabase.from(col.name).select('*');
+                if (error) {
+                    console.error(`Error fetching ${col.name}:`, error);
+                } else {
+                    col.setter(data);
                 }
-            });
+            }
+        };
+
+        fetchData();
+
+        // Realtime subscriptions
+        const channels = collections.map(col => {
+            return supabase
+                .channel(`public:${col.name}`)
+                .on('postgres_changes', { event: '*', schema: 'public', table: col.name }, (payload) => {
+                    console.log(`Change received for ${col.name}:`, payload);
+                    fetchData(); // Simple refresh for now
+                })
+                .subscribe();
         });
 
-        return () => unsubscribes.forEach(unsub => unsub());
+        return () => {
+            channels.forEach(channel => supabase.removeChannel(channel));
+        };
     }, [currentUser]);
 
-    // Generic update function
+    // Generic update function for Supabase
     const updateCollection = async (collectionName: string, data: any[] | ((prev: any[]) => any[]), currentState: any[]) => {
         const newData = typeof data === 'function' ? data(currentState) : data;
         
-        // This is a simplified sync. In a real app, you'd handle individual adds/updates/deletes.
-        // For this app, we'll compare and apply changes.
-        const batch = writeBatch(db);
-        
         // Find deleted
-        const currentIds = new Set(currentState.map(item => item.id));
         const newIds = new Set(newData.map(item => item.id));
+        const deletedIds = currentState.filter(item => !newIds.has(item.id)).map(item => item.id);
         
-        currentState.forEach(item => {
-            if (!newIds.has(item.id)) {
-                batch.delete(doc(db, collectionName, item.id));
-            }
-        });
+        if (deletedIds.length > 0) {
+            await supabase.from(collectionName).delete().in('id', deletedIds);
+        }
         
-        // Add/Update
-        newData.forEach(item => {
-            const { id, ...rest } = item;
-            const docRef = doc(db, collectionName, id);
-            batch.set(docRef, rest, { merge: true });
-        });
-        
-        await batch.commit();
+        // Upsert new/updated
+        if (newData.length > 0) {
+            const { error } = await supabase.from(collectionName).upsert(newData);
+            if (error) console.error(`Error upserting to ${collectionName}:`, error);
+        }
     };
 
     const setUsers = (data: any) => updateCollection('users', data, users);
@@ -192,19 +185,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const setServices = (data: any) => updateCollection('services', data, services);
 
     const seedData = async (data: any) => {
-        const batch = writeBatch(db);
-        Object.keys(data).forEach(key => {
+        for (const key of Object.keys(data)) {
             const items = data[key];
-            if (Array.isArray(items)) {
-                items.forEach(item => {
-                    const { id, ...rest } = item;
-                    if (id) {
-                        batch.set(doc(db, key, id), rest);
-                    }
-                });
+            if (Array.isArray(items) && items.length > 0) {
+                const { error } = await supabase.from(key).upsert(items);
+                if (error) console.error(`Error seeding ${key}:`, error);
             }
-        });
-        await batch.commit();
+        }
     };
 
     const loadDemoData = () => seedData(demoData);

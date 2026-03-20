@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { supabase } from '../lib/supabase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { User, Profile, SUPER_USER_EMAILS } from '../types';
 
@@ -49,70 +50,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [currentUser, selectedProfile, setSelectedProfile]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
-      console.log('Auth state changed:', firebaseUser?.email);
-      try {
-        if (firebaseUser) {
-          console.log('Fetching user document from Firestore:', firebaseUser.uid);
-          // Sync with Firestore
+    // Firebase Auth Listener (Keep for backward compatibility)
+    const unsubscribeFirebase = onAuthStateChanged(auth, async (firebaseUser: any) => {
+      console.log('Firebase Auth state changed:', firebaseUser?.email);
+      if (firebaseUser) {
+        try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          let userData: User;
           if (userDoc.exists()) {
-            userData = userDoc.data() as User;
-            console.log('User found in Firestore:', userData.email, 'Profiles:', userData.profiles);
-            
-            // Ensure super users have all profiles
-            if (userData.email && SUPER_USER_EMAILS.includes(userData.email)) {
-              const allProfiles = [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT];
-              if (!userData.profiles || userData.profiles.length !== allProfiles.length) {
-                console.log('Updating super user profiles in Firestore...');
-                userData = { ...userData, profiles: allProfiles };
-                await setDoc(doc(db, 'users', firebaseUser.uid), userData, { merge: true });
-              }
-            }
-            
-            setCurrentUser(userData);
-          } else {
-            console.log('User not found in Firestore, creating new user...');
-            // Create new user if it doesn't exist (e.g. first time Google login)
-            userData = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'Nuevo Usuario',
-              email: firebaseUser.email || '',
-              avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-              profiles: (firebaseUser.email && SUPER_USER_EMAILS.includes(firebaseUser.email)) ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] : [Profile.STUDENT],
-              activityStatus: 'Activo',
-              locationStatus: 'En el centro',
-            };
-            try {
-              await setDoc(doc(db, 'users', firebaseUser.uid), userData);
-              console.log('New user document created in Firestore');
-              setCurrentUser(userData);
-            } catch (err) {
-              console.error('Error creating new user document:', err);
-              throw err;
-            }
+            setCurrentUser(userDoc.data() as User);
           }
-
-          // Validate selected profile
-          if (selectedProfile && userData && !userData.profiles.includes(selectedProfile)) {
-            console.log('Selected profile no longer valid for user, clearing:', selectedProfile);
-            setSelectedProfile(null);
-          }
-        } else {
-          console.log('No firebase user found');
-          setCurrentUser(null);
+        } catch (err) {
+          console.error('Firebase sync error:', err);
         }
-      } catch (error) {
-        console.error('Error in onAuthStateChanged:', error);
-        setCurrentUser(null);
-      } finally {
-        console.log('Auth readiness set to true');
-        setIsAuthReady(true);
       }
     });
 
-    return () => unsubscribe();
+    // Supabase Auth Listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Supabase Auth Event:', event);
+      if (session?.user) {
+        const userEmail = session.user.email;
+        if (userEmail) {
+          // Map Supabase user to our User type
+          const newUser: User = {
+            id: session.user.id,
+            email: userEmail,
+            name: session.user.user_metadata.full_name || userEmail.split('@')[0],
+            profiles: SUPER_USER_EMAILS.includes(userEmail) 
+              ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
+              : [Profile.STUDENT],
+            activityStatus: 'Activo',
+            locationStatus: 'En el centro',
+            avatar: session.user.user_metadata.avatar_url || `https://i.pravatar.cc/150?u=${session.user.id}`
+          };
+          setCurrentUser(newUser);
+          setIsAuthReady(true);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        setSelectedProfile(null);
+        setIsAuthReady(true);
+      } else if (event === 'INITIAL_SESSION') {
+        if (!session) setIsAuthReady(true);
+      }
+    });
+
+    return () => {
+      unsubscribeFirebase();
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password?: string): Promise<boolean> => {
@@ -140,26 +126,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
-      console.log('AuthContext - Starting Google Login. authDomain:', (auth.app.options as any).authDomain);
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      console.log('AuthContext - Google Login successful for:', result.user.email);
+      console.log('AuthContext - Starting Google Login (Supabase)');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/login'
+        }
+      });
+      
+      if (error) throw error;
       return true;
     } catch (error: any) {
-      console.error('Google login error details:', {
-        code: error.code,
-        message: error.message,
-        customData: error.customData
-      });
-      if (error.code === 'auth/unauthorized-domain') {
-        console.error('CRITICAL: The current domain is not authorized in Firebase Console.');
-      }
+      console.error('Supabase login error details:', error);
       return false;
     }
   };
 
   const logout = async () => {
     await signOut(auth);
+    await supabase.auth.signOut();
     setSelectedProfile(null);
     setOriginalUser(null);
     navigate('/login');
@@ -208,7 +193,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateCurrentUser = async (userData: Partial<User>) => {
     if(currentUser) {
         const updatedUser = {...currentUser, ...userData};
-        await setDoc(doc(db, 'users', currentUser.id), updatedUser, { merge: true });
+        
+        // Update Supabase
+        const { error } = await supabase.from('users').upsert(updatedUser);
+        if (error) console.error('Error updating user in Supabase:', error);
+        
+        // Keep Firebase sync for now if needed
+        try {
+          await setDoc(doc(db, 'users', currentUser.id), updatedUser, { merge: true });
+        } catch (e) {
+          console.warn('Firebase sync failed (expected if domain not authorized):', e);
+        }
+
         setCurrentUser(updatedUser);
         if(isImpersonating && originalUser?.id === currentUser.id) {
             setOriginalUser(updatedUser);
