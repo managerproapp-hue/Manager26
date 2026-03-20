@@ -4,9 +4,14 @@ import { Navigate } from 'react-router-dom';
 import { getProfileDisplayName } from '../../types';
 
 export const ProfileSelector: React.FC = () => {
-  const { currentUser, selectProfile, logout } = useAuth();
+  const { currentUser, selectProfile, logout, isAuthReady } = useAuth();
+
+  console.log('ProfileSelector - isAuthReady:', isAuthReady, 'currentUser:', currentUser?.email);
+
+  if (!isAuthReady) return null;
 
   if (!currentUser) {
+    console.log('ProfileSelector - No user, redirecting to login');
     return <Navigate to="/login" />;
   }
 

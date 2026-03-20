@@ -59,8 +59,17 @@ import { Profile } from './types';
 
 import { useAuth } from './contexts/AuthContext';
 
+const RedirectHandler: React.FC = () => {
+  const { currentUser, selectedProfile } = useAuth();
+  
+  if (!currentUser) return <Navigate to="/login" replace />;
+  if (!selectedProfile) return <Navigate to="/select-profile" replace />;
+  
+  return <Navigate to={`/${selectedProfile}/dashboard`} replace />;
+};
+
 const AppContent: React.FC = () => {
-  const { isAuthReady } = useAuth();
+  const { isAuthReady, currentUser, selectedProfile } = useAuth();
 
   if (!isAuthReady) {
     return (
@@ -75,7 +84,7 @@ const AppContent: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/select-profile" element={<ProfileSelector />} />
       <Route path="/blocked-access" element={<BlockedAccess />} />
-      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/" element={<RedirectHandler />} />
 
       {/* Creator Routes */}
       <Route element={<ProtectedRoute allowedProfiles={[Profile.CREATOR]} />}>
@@ -179,7 +188,7 @@ const AppContent: React.FC = () => {
       </Route>
 
       {/* Fallback for unknown routes */}
-      <Route path="*" element={<Navigate to="/login" />} />
+      <Route path="*" element={<RedirectHandler />} />
     </Routes>
   );
 };

@@ -12,12 +12,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedProfiles,
   const { currentUser, selectedProfile } = useAuth();
 
   if (!currentUser) {
+    console.log('ProtectedRoute - No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
   if (!selectedProfile || !allowedProfiles.includes(selectedProfile)) {
-    // If user has a profile, but not the right one, send them to selector.
-    // Or if they landed here without selecting a profile.
+    console.log('ProtectedRoute - Invalid profile, redirecting to selector');
     return <Navigate to="/select-profile" replace />;
   }
 

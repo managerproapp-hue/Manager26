@@ -43,30 +43,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
-      if (firebaseUser) {
-        // Sync with Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          setCurrentUser(userData);
+      console.log('Auth state changed:', firebaseUser?.email);
+      try {
+        if (firebaseUser) {
+          // Sync with Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data() as User;
+            console.log('User found in Firestore:', userData.email);
+            setCurrentUser(userData);
+          } else {
+            console.log('User not found in Firestore, creating new user...');
+            // Create new user if it doesn't exist (e.g. first time Google login)
+            const newUser: User = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'Nuevo Usuario',
+              email: firebaseUser.email || '',
+              avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+              profiles: (firebaseUser.email && SUPER_USER_EMAILS.includes(firebaseUser.email)) ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] : [Profile.STUDENT],
+              activityStatus: 'Activo',
+              locationStatus: 'En el centro',
+            };
+            await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+            setCurrentUser(newUser);
+          }
         } else {
-          // Create new user if it doesn't exist (e.g. first time Google login)
-          const newUser: User = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'Nuevo Usuario',
-            email: firebaseUser.email || '',
-            avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-            profiles: (firebaseUser.email && SUPER_USER_EMAILS.includes(firebaseUser.email)) ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] : [Profile.STUDENT],
-            activityStatus: 'Activo',
-            locationStatus: 'En el centro',
-          };
-          await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
-          setCurrentUser(newUser);
+          console.log('No firebase user found');
+          setCurrentUser(null);
         }
-      } else {
+      } catch (error) {
+        console.error('Error in onAuthStateChanged:', error);
         setCurrentUser(null);
+      } finally {
+        setIsAuthReady(true);
       }
-      setIsAuthReady(true);
     });
 
     return () => unsubscribe();

@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 import { useCreator } from '../../contexts/CreatorContext';
 
 export const Login: React.FC = () => {
-  const { login, signUp, loginWithGoogle } = useAuth();
+  const { login, signUp, loginWithGoogle, currentUser, selectedProfile } = useAuth();
   const { companyInfo } = useCompany();
   const { creatorInfo } = useCreator();
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    console.log('Login useEffect - currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
+    if (currentUser) {
+      if (selectedProfile && currentUser.profiles.includes(selectedProfile)) {
+        console.log('Redirecting to dashboard:', selectedProfile);
+        navigate(`/${selectedProfile}/dashboard`);
+      } else {
+        console.log('Redirecting to profile selector');
+        navigate('/select-profile');
+      }
+    }
+  }, [currentUser, selectedProfile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

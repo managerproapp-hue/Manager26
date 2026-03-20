@@ -124,6 +124,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 col.setter(data as any);
             }, (error: any) => {
                 console.error(`Error fetching ${col.name}:`, error);
+                if (error.message?.includes('insufficient permissions')) {
+                    console.warn(`Permission denied for ${col.name}. This is expected if you are not an admin.`);
+                }
             });
         });
 
