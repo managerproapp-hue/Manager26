@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import { CompanyProvider } from './contexts/CompanyContext';
@@ -62,14 +62,26 @@ import { useAuth } from './contexts/AuthContext';
 const RedirectHandler: React.FC = () => {
   const { currentUser, selectedProfile } = useAuth();
   
-  if (!currentUser) return <Navigate to="/login" replace />;
-  if (!selectedProfile) return <Navigate to="/select-profile" replace />;
+  console.log('RedirectHandler - currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
+
+  if (!currentUser) {
+    console.log('RedirectHandler - No user, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+  if (!selectedProfile) {
+    console.log('RedirectHandler - No profile, redirecting to select-profile');
+    return <Navigate to="/select-profile" replace />;
+  }
   
+  console.log('RedirectHandler - Redirecting to dashboard:', selectedProfile);
   return <Navigate to={`/${selectedProfile}/dashboard`} replace />;
 };
 
 const AppContent: React.FC = () => {
   const { isAuthReady, currentUser, selectedProfile } = useAuth();
+  const location = useLocation();
+
+  console.log('AppContent - Path:', location.pathname, 'isAuthReady:', isAuthReady, 'currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
 
   if (!isAuthReady) {
     return (

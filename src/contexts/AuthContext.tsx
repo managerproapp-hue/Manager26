@@ -42,6 +42,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isImpersonating = !!originalUser;
 
   useEffect(() => {
+    if (currentUser && selectedProfile && !currentUser.profiles.includes(selectedProfile)) {
+      console.log('Selected profile no longer valid for user, clearing:', selectedProfile);
+      setSelectedProfile(null);
+    }
+  }, [currentUser, selectedProfile, setSelectedProfile]);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
       console.log('Auth state changed:', firebaseUser?.email);
       try {
@@ -49,8 +56,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Sync with Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
-            const userData = userDoc.data() as User;
+            let userData = userDoc.data() as User;
             console.log('User found in Firestore:', userData.email);
+            
+            // Ensure super users have all profiles
+            if (userData.email && SUPER_USER_EMAILS.includes(userData.email)) {
+              const allProfiles = [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT];
+              if (!userData.profiles || userData.profiles.length !== allProfiles.length) {
+                console.log('Updating super user profiles in Firestore...');
+                userData = { ...userData, profiles: allProfiles };
+                await setDoc(doc(db, 'users', firebaseUser.uid), userData, { merge: true });
+              }
+            }
+            
             setCurrentUser(userData);
           } else {
             console.log('User not found in Firestore, creating new user...');

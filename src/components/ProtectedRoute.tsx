@@ -9,7 +9,17 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedProfiles, children }) => {
-  const { currentUser, selectedProfile } = useAuth();
+  const { currentUser, selectedProfile, isAuthReady } = useAuth();
+
+  console.log('ProtectedRoute - isAuthReady:', isAuthReady, 'currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile, 'allowedProfiles:', allowedProfiles);
+
+  if (!isAuthReady) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     console.log('ProtectedRoute - No user, redirecting to login');
