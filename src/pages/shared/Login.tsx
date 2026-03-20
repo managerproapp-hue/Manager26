@@ -5,6 +5,7 @@ import { useCompany } from '../../contexts/CompanyContext';
 import { useCreator } from '../../contexts/CreatorContext';
 
 export const Login: React.FC = () => {
+  console.log('Login component rendering');
   const { login, signUp, loginWithGoogle, currentUser, selectedProfile } = useAuth();
   const { companyInfo } = useCompany();
   const { creatorInfo } = useCreator();

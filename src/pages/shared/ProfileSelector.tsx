@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { getProfileDisplayName } from '../../types';
 
 export const ProfileSelector: React.FC = () => {
-  const { currentUser, selectProfile, logout, isAuthReady } = useAuth();
+  const { currentUser, selectedProfile, selectProfile, logout, isAuthReady } = useAuth();
+  const navigate = useNavigate();
 
-  console.log('ProfileSelector - isAuthReady:', isAuthReady, 'currentUser:', currentUser?.email);
+  console.log('ProfileSelector - isAuthReady:', isAuthReady, 'currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
+
+  useEffect(() => {
+    if (isAuthReady && currentUser && selectedProfile) {
+      if (currentUser.profiles.includes(selectedProfile)) {
+        console.log('ProfileSelector - Profile already selected, redirecting to dashboard:', selectedProfile);
+        navigate(`/${selectedProfile}/dashboard`);
+      }
+    }
+  }, [isAuthReady, currentUser, selectedProfile, navigate]);
 
   if (!isAuthReady) return null;
 

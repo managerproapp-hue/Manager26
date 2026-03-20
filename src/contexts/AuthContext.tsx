@@ -56,8 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Fetching user document from Firestore:', firebaseUser.uid);
           // Sync with Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          let userData: User;
           if (userDoc.exists()) {
-            let userData = userDoc.data() as User;
+            userData = userDoc.data() as User;
             console.log('User found in Firestore:', userData.email, 'Profiles:', userData.profiles);
             
             // Ensure super users have all profiles
@@ -74,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else {
             console.log('User not found in Firestore, creating new user...');
             // Create new user if it doesn't exist (e.g. first time Google login)
-            const newUser: User = {
+            userData = {
               id: firebaseUser.uid,
               name: firebaseUser.displayName || 'Nuevo Usuario',
               email: firebaseUser.email || '',
@@ -84,13 +85,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               locationStatus: 'En el centro',
             };
             try {
-              await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+              await setDoc(doc(db, 'users', firebaseUser.uid), userData);
               console.log('New user document created in Firestore');
-              setCurrentUser(newUser);
+              setCurrentUser(userData);
             } catch (err) {
               console.error('Error creating new user document:', err);
               throw err;
             }
+          }
+
+          // Validate selected profile
+          if (selectedProfile && userData && !userData.profiles.includes(selectedProfile)) {
+            console.log('Selected profile no longer valid for user, clearing:', selectedProfile);
+            setSelectedProfile(null);
           }
         } else {
           console.log('No firebase user found');
