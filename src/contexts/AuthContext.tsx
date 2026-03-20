@@ -53,11 +53,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Auth state changed:', firebaseUser?.email);
       try {
         if (firebaseUser) {
+          console.log('Fetching user document from Firestore:', firebaseUser.uid);
           // Sync with Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             let userData = userDoc.data() as User;
-            console.log('User found in Firestore:', userData.email);
+            console.log('User found in Firestore:', userData.email, 'Profiles:', userData.profiles);
             
             // Ensure super users have all profiles
             if (userData.email && SUPER_USER_EMAILS.includes(userData.email)) {
@@ -82,8 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               activityStatus: 'Activo',
               locationStatus: 'En el centro',
             };
-            await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
-            setCurrentUser(newUser);
+            try {
+              await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+              console.log('New user document created in Firestore');
+              setCurrentUser(newUser);
+            } catch (err) {
+              console.error('Error creating new user document:', err);
+              throw err;
+            }
           }
         } else {
           console.log('No firebase user found');
@@ -93,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error in onAuthStateChanged:', error);
         setCurrentUser(null);
       } finally {
+        console.log('Auth readiness set to true');
         setIsAuthReady(true);
       }
     });
@@ -142,6 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const selectProfile = (profile: Profile) => {
+    console.log('AuthContext - selectProfile:', profile, 'currentUser:', currentUser?.email);
     if (currentUser && currentUser.profiles.includes(profile)) {
       setSelectedProfile(profile);
       

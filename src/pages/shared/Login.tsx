@@ -30,6 +30,7 @@ export const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Login handleSubmit - Email:', email);
     setError('');
     setIsLoading(true);
     

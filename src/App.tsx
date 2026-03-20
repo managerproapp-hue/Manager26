@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import { CompanyProvider } from './contexts/CompanyContext';
@@ -211,11 +211,11 @@ const App: React.FC = () => {
       <CompanyProvider>
         <CreatorProvider>
           <Router>
-            <DataProvider>
-              <AuthProvider>
+            <AuthProvider>
+              <DataProvider>
                 <AppContent />
-              </AuthProvider>
-            </DataProvider>
+              </DataProvider>
+            </AuthProvider>
           </Router>
         </CreatorProvider>
       </CompanyProvider>

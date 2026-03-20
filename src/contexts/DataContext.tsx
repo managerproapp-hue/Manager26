@@ -11,6 +11,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+import { useAuth } from './AuthContext';
 import { initialData } from '../services/dataService';
 import { demoData } from '../services/demoDataService';
 import { 
@@ -91,9 +92,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [classroomOrders, setClassroomOrdersState] = useState<ClassroomOrder[]>([]);
     const [serviceGroups, setServiceGroupsState] = useState<ServiceGroup[]>([]);
     const [services, setServicesState] = useState<Service[]>([]);
+    const { currentUser } = useAuth();
 
     // Helper to sync collection
     useEffect(() => {
+        if (!currentUser) {
+            console.log('DataProvider - No user, skipping listeners');
+            return;
+        }
+
+        console.log('DataProvider - User authenticated, attaching listeners');
         const collections: any[] = [
             { name: 'users', setter: setUsersState },
             { name: 'products', setter: setProductsState },
@@ -131,7 +139,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         return () => unsubscribes.forEach(unsub => unsub());
-    }, []);
+    }, [currentUser]);
 
     // Generic update function
     const updateCollection = async (collectionName: string, data: any[] | ((prev: any[]) => any[]), currentState: any[]) => {

@@ -26,7 +26,10 @@ export const ProfileSelector: React.FC = () => {
         {currentUser.profiles.map((profile) => (
           <button
             key={profile}
-            onClick={() => selectProfile(profile)}
+            onClick={() => {
+              console.log('ProfileSelector - Selecting profile:', profile);
+              selectProfile(profile);
+            }}
             className="px-8 py-4 bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 font-semibold rounded-lg shadow-md hover:bg-primary-500 hover:text-white dark:hover:bg-primary-600 transition-all duration-300 transform hover:scale-105"
           >
             <span className="text-xl">{getProfileDisplayName(profile)}</span>
