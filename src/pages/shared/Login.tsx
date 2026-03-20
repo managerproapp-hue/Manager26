@@ -54,7 +54,7 @@ export const Login: React.FC = () => {
     setIsLoading(true);
     const success = await loginWithGoogle();
     if (!success) {
-      setError('Error al iniciar sesión con Google.');
+      setError('Error al iniciar sesión con Google. Es posible que el dominio no esté autorizado en Firebase.');
       setIsLoading(false);
     }
   };
@@ -139,8 +139,21 @@ export const Login: React.FC = () => {
               className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5 mr-2" />
-              Continuar con Google
+              {isLoading ? 'Cargando...' : 'Iniciar Sesión con Google'}
             </button>
+
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.clear();
+                  window.location.reload();
+                }}
+                className="w-full text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+              >
+                ¿Problemas al entrar? Limpiar caché y reiniciar
+              </button>
+            </div>
           </div>
         </form>
         

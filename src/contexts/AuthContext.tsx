@@ -140,11 +140,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
+      console.log('AuthContext - Starting Google Login');
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      console.log('AuthContext - Google Login successful for:', result.user.email);
       return true;
-    } catch (error) {
-      console.error('Google login error:', error);
+    } catch (error: any) {
+      console.error('Google login error details:', {
+        code: error.code,
+        message: error.message,
+        customData: error.customData
+      });
+      if (error.code === 'auth/unauthorized-domain') {
+        console.error('CRITICAL: The current domain is not authorized in Firebase Console.');
+      }
       return false;
     }
   };
