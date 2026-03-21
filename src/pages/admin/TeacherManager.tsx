@@ -29,22 +29,35 @@ export const TeacherManager: React.FC = () => {
         setIsDeleteModalOpen(true);
     };
 
-    const handleSaveUser = (userData: Partial<User>) => {
+    const handleSaveUser = async (userData: Partial<User>) => {
         if (selectedUser) { // Editing
             setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...userData } : u));
         } else { // Creating
-            const newUser: User = {
-                id: `user-${Date.now()}`,
-                name: userData.name || '',
-                email: userData.email || '',
-                password: userData.password || 'password',
-                avatar: `https://i.pravatar.cc/150?u=${userData.email}`,
-                profiles: userData.profiles || [],
-                activityStatus: 'Activo',
-                locationStatus: 'En el centro',
-                ...userData
-            };
-            setUsers([...users, newUser]);
+            try {
+                const response = await fetch('/api/admin/create-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: userData.email,
+                        password: userData.password || 'password123',
+                        name: userData.name,
+                        profiles: userData.profiles
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error al crear el usuario');
+                }
+
+                const result = await response.json();
+                console.log('User created successfully:', result.user);
+                // The DataProvider will sync the new user automatically via realtime
+            } catch (error: any) {
+                console.error('Error creating user:', error);
+                alert(`Error: ${error.message}`);
+                return;
+            }
         }
         setIsFormModalOpen(false);
         setSelectedUser(null);

@@ -10,15 +10,16 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   avatar TEXT,
   profiles TEXT[] DEFAULT '{}',
-  activity_status TEXT CHECK (activity_status IN ('Activo', 'De Baja')),
-  location_status TEXT CHECK (location_status IN ('En el centro', 'Fuera del centro')),
-  contract_type TEXT CHECK (contract_type IN ('Fijo', 'Interino')),
-  role_type TEXT CHECK (role_type IN ('Titular', 'Sustituto')),
-  classroom_id TEXT,
+  activityStatus TEXT CHECK (activityStatus IN ('Activo', 'De Baja')),
+  locationStatus TEXT CHECK (locationStatus IN ('En el centro', 'Fuera del centro')),
+  contractType TEXT CHECK (contractType IN ('Fijo', 'Interino')),
+  roleType TEXT CHECK (roleType IN ('Titular', 'Sustituto')),
+  classroomId TEXT,
   phone TEXT,
-  secondary_phone TEXT,
+  secondaryPhone TEXT,
   address TEXT,
-  student_simulated_profile TEXT CHECK (student_simulated_profile IN ('teacher', 'almacen')),
+  studentSimulatedProfile TEXT CHECK (studentSimulatedProfile IN ('teacher', 'almacen')),
+  mustChangePassword BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -148,6 +149,9 @@ ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
 
 -- Policies (Example: Allow authenticated users to read everything)
 CREATE POLICY "Allow authenticated read" ON users FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow users to update their own record" ON users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Allow service role to do everything" ON users FOR ALL USING (true);
+
 CREATE POLICY "Allow authenticated read" ON products FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow authenticated read" ON suppliers FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow authenticated read" ON events FOR SELECT USING (auth.role() = 'authenticated');

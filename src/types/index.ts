@@ -46,6 +46,7 @@ export interface User {
   secondaryPhone?: string;
   address?: string;
   studentSimulatedProfile?: Profile.TEACHER | Profile.ALMACEN;
+  mustChangePassword?: boolean;
 }
 
 export interface Company {

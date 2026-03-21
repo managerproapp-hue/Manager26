@@ -6,19 +6,24 @@ import { useCreator } from '../../contexts/CreatorContext';
 
 export const Login: React.FC = () => {
   console.log('Login component rendering');
-  const { login, signUp, loginWithGoogle, currentUser, selectedProfile } = useAuth();
+  const { login, changePassword, recoverMasterAccount, currentUser, selectedProfile } = useAuth();
   const { companyInfo } = useCompany();
   const { creatorInfo } = useCreator();
   const navigate = useNavigate();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     console.log('Login useEffect - currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
-    if (currentUser) {
+    if (currentUser && !mustChangePassword) {
       if (selectedProfile && currentUser.profiles.includes(selectedProfile)) {
         console.log('Redirecting to dashboard:', selectedProfile);
         navigate(`/${selectedProfile}/dashboard`);
@@ -27,36 +32,57 @@ export const Login: React.FC = () => {
         navigate('/select-profile');
       }
     }
-  }, [currentUser, selectedProfile, navigate]);
+  }, [currentUser, selectedProfile, navigate, mustChangePassword]);
+
+  const handleRecover = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setRecoveryMessage('');
+    setIsLoading(true);
+    
+    const result = await recoverMasterAccount(email, phone);
+    if (result.success) {
+      setRecoveryMessage(result.message);
+      setIsRecovering(false);
+    } else {
+      setError(result.message);
+    }
+    setIsLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login handleSubmit - Email:', email);
     setError('');
     setIsLoading(true);
     
-    let success = false;
-    if (isSignUp) {
-      success = await signUp(email, password);
+    if (mustChangePassword) {
+      if (newPassword !== confirmPassword) {
+        setError('Las contraseñas no coinciden.');
+        setIsLoading(false);
+        return;
+      }
+      if (newPassword.length < 6) {
+        setError('La contraseña debe tener al menos 6 caracteres.');
+        setIsLoading(false);
+        return;
+      }
+      const success = await changePassword(newPassword);
+      if (success) {
+        setMustChangePassword(false);
+      } else {
+        setError('Error al cambiar la contraseña. Inténtalo de nuevo.');
+      }
     } else {
-      success = await login(email, password);
+      const result = await login(email, password);
+      if (result.success) {
+        if (result.mustChangePassword) {
+          setMustChangePassword(true);
+        }
+      } else {
+        setError('Email o contraseña incorrectos.');
+      }
     }
-
-    setIsLoading(true); // Keep loading while redirecting/syncing
-    if (!success) {
-      setError(isSignUp ? 'Error al crear la cuenta. Inténtalo de nuevo.' : 'Email o contraseña incorrectos.');
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setError('');
-    setIsLoading(true);
-    const success = await loginWithGoogle();
-    if (!success) {
-      setError('Error al iniciar sesión con Google. Es posible que el dominio no esté autorizado en Firebase.');
-      setIsLoading(false);
-    }
+    setIsLoading(false);
   };
 
   return (
@@ -66,44 +92,143 @@ export const Login: React.FC = () => {
           <img src={companyInfo.logo} alt="Logotipo de la Empresa" className="h-12 w-auto" />
         </div>
         <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
-          {isSignUp ? 'Crear Cuenta' : `Bienvenido a ${companyInfo.name}`}
+          {isRecovering ? 'Recuperar Acceso' : (mustChangePassword ? 'Cambiar Contraseña' : `Bienvenido a ${companyInfo.name}`)}
         </h2>
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Correo Electrónico
-            </label>
-            <div className="mt-1">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              />
-            </div>
+        {recoveryMessage && (
+          <div className="mt-4 p-3 bg-green-100 text-green-700 text-sm rounded-md text-center">
+            {recoveryMessage}
           </div>
+        )}
+        
+        {mustChangePassword && (
+          <p className="mt-2 text-sm text-center text-gray-600 dark:text-gray-400">
+            Debes cambiar tu contraseña temporal antes de continuar.
+          </p>
+        )}
+        
+        <form className="mt-8 space-y-6" onSubmit={isRecovering ? handleRecover : handleSubmit}>
+          {isRecovering ? (
+            <>
+              <div>
+                <label htmlFor="recover-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Correo Electrónico Master
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="recover-email"
+                    name="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="recover-phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Número de Teléfono de Recuperación
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="recover-phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            </>
+          ) : !mustChangePassword ? (
+            <>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Correo Electrónico
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Contraseña
-            </label>
-            <div className="mt-1">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              />
-            </div>
-          </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Contraseña
+                  </label>
+                  {email === 'managerproapp@gmail.com' && (
+                    <button
+                      type="button"
+                      onClick={() => setIsRecovering(true)}
+                      className="text-xs text-primary-600 hover:text-primary-500"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  )}
+                </div>
+                <div className="mt-1">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Nueva Contraseña
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Confirmar Nueva Contraseña
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            </>
+          )}
           
           {error && (
             <div className="text-red-500 text-sm text-center font-medium">{error}</div>
@@ -118,29 +243,19 @@ export const Login: React.FC = () => {
               {isLoading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               ) : (
-                isSignUp ? 'Registrarse' : 'Iniciar Sesión'
+                isRecovering ? 'Recuperar Contraseña' : (mustChangePassword ? 'Actualizar Contraseña' : 'Iniciar Sesión')
               )}
             </button>
 
-            <div className="text-center">
+            {isRecovering && (
               <button
                 type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-primary-600 hover:text-primary-500 font-medium"
+                onClick={() => setIsRecovering(false)}
+                className="w-full text-center text-sm text-gray-600 hover:text-gray-500"
               >
-                {isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
+                Volver al inicio de sesión
               </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-              className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-            >
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5 mr-2" />
-              {isLoading ? 'Cargando...' : 'Iniciar Sesión con Google'}
-            </button>
+            )}
 
             <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
               <button

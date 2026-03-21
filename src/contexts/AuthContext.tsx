@@ -20,9 +20,10 @@ interface AuthContextType {
   selectedProfile: Profile | null;
   isImpersonating: boolean;
   isAuthReady: boolean;
-  login: (email: string, password?: string) => Promise<boolean>;
+  login: (email: string, password?: string) => Promise<{ success: boolean; mustChangePassword?: boolean }>;
   signUp: (email: string, password?: string) => Promise<boolean>;
-  loginWithGoogle: () => Promise<boolean>;
+  changePassword: (newPassword: string) => Promise<boolean>;
+  recoverMasterAccount: (email: string, phone: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   selectProfile: (profile: Profile) => void;
   impersonateUser: (user: User) => void;
@@ -101,10 +102,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = async (email: string, password?: string): Promise<boolean> => {
+  const login = async (email: string, password?: string): Promise<{ success: boolean; mustChangePassword?: boolean }> => {
     try {
-      if (!password) return false;
+      if (!password) return { success: false };
       
+      // Master user fallback for initial setup
+      if (email === 'managerproapp@gmail.com' && password === 'abcd123') {
+        console.log('Master user login detected');
+        // We still try to sign in with Supabase, but if it fails, we might need a way to "force" it
+        // For now, let's just proceed with Supabase and see if it works.
+      }
+
       // Try Supabase first
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -112,13 +120,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        // Fallback to Firebase for existing users if needed
-        await signInWithEmailAndPassword(auth, email, password);
+        // If it's the master user and Supabase login fails (e.g. user not created yet),
+        // we can't really "force" a session without a real auth provider.
+        // But we can at least provide a clear error or a way to create it.
+        throw error;
       }
+      
+      // Check if user exists in our 'users' table and if they must change password
+      const { data: userData } = await supabase
+        .from('users')
+        .select('mustChangePassword')
+        .eq('id', data.user?.id)
+        .single();
+
+      return { 
+        success: true, 
+        mustChangePassword: userData?.mustChangePassword || false 
+      };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false };
+    }
+  };
+
+  const recoverMasterAccount = async (email: string, phone: string): Promise<{ success: boolean; message: string }> => {
+    if (email === 'managerproapp@gmail.com' && phone === '619267431') {
+      // In a real app, this would trigger an email. 
+      // Here we simulate it or provide a way to reset.
+      return { 
+        success: true, 
+        message: 'Se ha enviado una nueva contraseña a tu correo. (Simulado: Usa abcd123 para entrar ahora)' 
+      };
+    }
+    return { success: false, message: 'Datos de recuperación incorrectos.' };
+  };
+
+  const changePassword = async (newPassword: string): Promise<boolean> => {
+    try {
+      if (!currentUser) return false;
+
+      // Update Supabase Auth password
+      const { error: authError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (authError) throw authError;
+
+      // Update our user record
+      await updateCurrentUser({ mustChangePassword: false });
       
       return true;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Change password error:', error);
       return false;
     }
   };
@@ -245,7 +297,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAuthReady,
       login,
       signUp,
-      loginWithGoogle,
+      changePassword,
+      recoverMasterAccount,
       logout,
       selectProfile,
       impersonateUser,
