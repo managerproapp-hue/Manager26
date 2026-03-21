@@ -33,7 +33,7 @@ async function startServer() {
   if (supabaseAdmin) {
     const seedMaster = async () => {
       const email = 'managerproapp@gmail.com';
-      const password = 'abcd123';
+      const password = 'Proteinas@123';
       const name = 'Master User';
       const profiles = ['creator', 'admin', 'teacher', 'almacen', 'student'];
 
@@ -44,8 +44,8 @@ async function startServer() {
         return;
       }
 
-      const masterExists = users.users.some(u => u.email === email);
-      if (!masterExists) {
+      const existingUser = users.users.find(u => u.email === email);
+      if (!existingUser) {
         console.log('Master user not found, creating...');
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email,
@@ -66,7 +66,7 @@ async function startServer() {
             email,
             name,
             profiles,
-            mustChangePassword: true,
+            mustChangePassword: false, // Set to false as requested "fixed" password
             activityStatus: 'Activo',
             locationStatus: 'En el centro'
           });
@@ -77,7 +77,28 @@ async function startServer() {
           console.log('Master user created successfully');
         }
       } else {
-        console.log('Master user already exists');
+        console.log('Master user already exists, updating password to fixed value...');
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+          existingUser.id,
+          { password }
+        );
+        if (updateError) {
+          console.error('Error updating master user password:', updateError);
+        } else {
+          // Also ensure the database record is correct
+          await supabaseAdmin
+            .from('users')
+            .upsert({
+              id: existingUser.id,
+              email,
+              name,
+              profiles,
+              mustChangePassword: false,
+              activityStatus: 'Activo',
+              locationStatus: 'En el centro'
+            });
+          console.log('Master user password updated successfully to fixed value');
+        }
       }
     };
     seedMaster();

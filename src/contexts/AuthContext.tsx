@@ -107,10 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!password) return { success: false };
       
       // Master user fallback for initial setup
-      if (email === 'managerproapp@gmail.com' && password === 'abcd123') {
+      if (email === 'managerproapp@gmail.com' && password === 'Proteinas@123') {
         console.log('Master user login detected');
-        // We still try to sign in with Supabase, but if it fails, we might need a way to "force" it
-        // For now, let's just proceed with Supabase and see if it works.
       }
 
       // Try Supabase first
@@ -149,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Here we simulate it or provide a way to reset.
       return { 
         success: true, 
-        message: 'Se ha enviado una nueva contraseña a tu correo. (Simulado: Usa abcd123 para entrar ahora)' 
+        message: 'Se ha enviado una nueva contraseña a tu correo. (Simulado: Usa Proteinas@123 para entrar ahora)' 
       };
     }
     return { success: false, message: 'Datos de recuperación incorrectos.' };
