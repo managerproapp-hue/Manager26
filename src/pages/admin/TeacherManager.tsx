@@ -31,7 +31,15 @@ export const TeacherManager: React.FC = () => {
 
     const handleSaveUser = async (userData: Partial<User>) => {
         if (selectedUser) { // Editing
-            setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...userData } : u));
+            try {
+                // Update local state which triggers DataContext upsert
+                setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...userData } : u));
+                console.log('User updated locally and syncing to DB...');
+            } catch (error: any) {
+                console.error('Error updating user:', error);
+                alert(`Error: ${error.message}`);
+                return;
+            }
         } else { // Creating
             try {
                 const response = await fetch('/api/admin/create-user', {
@@ -41,7 +49,11 @@ export const TeacherManager: React.FC = () => {
                         email: userData.email,
                         password: userData.password || 'password123',
                         name: userData.name,
-                        profiles: userData.profiles
+                        profiles: userData.profiles,
+                        contractType: userData.contractType,
+                        roleType: userData.roleType,
+                        phone: userData.phone,
+                        address: userData.address
                     })
                 });
 
@@ -51,8 +63,8 @@ export const TeacherManager: React.FC = () => {
                 }
 
                 const result = await response.json();
-                console.log('User created successfully:', result.user);
-                // The DataProvider will sync the new user automatically via realtime
+                console.log('User created/linked successfully:', result.userId);
+                alert('Usuario guardado correctamente.');
             } catch (error: any) {
                 console.error('Error creating user:', error);
                 alert(`Error: ${error.message}`);
@@ -192,6 +204,8 @@ const UserFormModal: React.FC<{
         profiles: user?.profiles || [],
         contractType: user?.contractType || 'Fijo',
         roleType: user?.roleType || 'Titular',
+        phone: user?.phone || '',
+        address: user?.address || '',
     });
 
     const userAssignments = useMemo(() => {
@@ -240,6 +254,11 @@ const UserFormModal: React.FC<{
                 <input type="email" name="email" value={formState.email} onChange={handleChange} placeholder="Email" required className="w-full p-2 border rounded dark:bg-gray-700"/>
                 <input type="password" name="password" value={formState.password} onChange={handleChange} placeholder={user ? "Nueva contraseña (opcional)" : "Contraseña"} required={!user} className="w-full p-2 border rounded dark:bg-gray-700"/>
                 
+                <div className="grid grid-cols-2 gap-4">
+                    <input type="tel" name="phone" value={formState.phone} onChange={handleChange} placeholder="Teléfono" className="w-full p-2 border rounded dark:bg-gray-700"/>
+                    <input type="text" name="address" value={formState.address} onChange={handleChange} placeholder="Dirección" className="w-full p-2 border rounded dark:bg-gray-700"/>
+                </div>
+
                 <div>
                     <label className="font-medium">Perfiles</label>
                     <div className="grid grid-cols-3 gap-2 mt-1">

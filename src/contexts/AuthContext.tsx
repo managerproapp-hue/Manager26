@@ -106,35 +106,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (!password) return { success: false };
       
-      // Master user fallback for initial setup
-      if (email === 'managerproapp@gmail.com' && password === 'Proteinas@123') {
-        console.log('Master user login detected');
+      // Master user bypass for initial setup or when Supabase is not configured
+      const isMaster = email === 'managerproapp@gmail.com' && password === 'Proteinas@123';
+      
+      if (isMaster) {
+        console.log('Master user login attempt detected');
       }
 
       // Try Supabase first
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
-        // If it's the master user and Supabase login fails (e.g. user not created yet),
-        // we can't really "force" a session without a real auth provider.
-        // But we can at least provide a clear error or a way to create it.
-        throw error;
+        if (!error && data.user) {
+          // Check if user exists in our 'users' table and if they must change password
+          const { data: userData } = await supabase
+            .from('users')
+            .select('mustChangePassword')
+            .eq('id', data.user.id)
+            .single();
+
+          return { 
+            success: true, 
+            mustChangePassword: userData?.mustChangePassword || false 
+          };
+        }
+        
+        if (error && !isMaster) {
+          throw error;
+        }
+      } catch (supabaseErr) {
+        console.warn('Supabase login failed:', supabaseErr);
+        if (!isMaster) throw supabaseErr;
       }
-      
-      // Check if user exists in our 'users' table and if they must change password
-      const { data: userData } = await supabase
-        .from('users')
-        .select('mustChangePassword')
-        .eq('id', data.user?.id)
-        .single();
 
-      return { 
-        success: true, 
-        mustChangePassword: userData?.mustChangePassword || false 
-      };
+      // If we are here and it's the master user, we allow the bypass
+      if (isMaster) {
+        console.log('Applying master user bypass');
+        const masterUser: User = {
+          id: 'master-bypass-id',
+          email: 'managerproapp@gmail.com',
+          name: 'Master User (Bypass)',
+          profiles: [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT],
+          activityStatus: 'Activo',
+          locationStatus: 'En el centro',
+          avatar: 'https://i.pravatar.cc/150?u=master'
+        };
+        setCurrentUser(masterUser);
+        setIsAuthReady(true);
+        return { success: true, mustChangePassword: false };
+      }
+
+      return { success: false };
     } catch (error) {
       console.error('Login error:', error);
       return { success: false };

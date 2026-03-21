@@ -20,6 +20,10 @@ async function startServer() {
   const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://lidszakjqqaccyfqiaoj.supabase.co';
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+  if (!supabaseServiceRoleKey) {
+    console.warn('SUPABASE_CONFIG_WARNING: SUPABASE_SERVICE_ROLE_KEY is not set. Master user seeding and admin operations will be disabled.');
+  }
+
   const supabaseAdmin = supabaseServiceRoleKey 
     ? createClient(supabaseUrl, supabaseServiceRoleKey, {
         auth: {
@@ -37,16 +41,9 @@ async function startServer() {
       const name = 'Master User';
       const profiles = ['creator', 'admin', 'teacher', 'almacen', 'student'];
 
-      console.log('Checking for master user...');
-      const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-      if (listError) {
-        console.error('Error listing users:', listError);
-        return;
-      }
-
-      const existingUser = users.users.find(u => u.email === email);
-      if (!existingUser) {
-        console.log('Master user not found, creating...');
+      console.log('Seeding master user...');
+      try {
+        // Try to create user (will fail if exists)
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
@@ -55,50 +52,44 @@ async function startServer() {
         });
 
         if (authError) {
-          console.error('Error creating master user auth:', authError);
+          if (authError.message.includes('already exists') || authError.status === 422) {
+            console.log('Master user already exists in Auth, updating password...');
+            // Find user to get ID
+            const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+            const existingUser = users?.find(u => u.email === email);
+            if (existingUser) {
+              await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
+              await supabaseAdmin.from('users').upsert({
+                id: existingUser.id,
+                email,
+                name,
+                profiles,
+                mustChangePassword: false,
+                activityStatus: 'Activo',
+                locationStatus: 'En el centro'
+              });
+              console.log('Master user password and record updated.');
+            }
+          } else {
+            console.error('Error creating master user auth:', authError);
+          }
           return;
         }
 
-        const { error: dbError } = await supabaseAdmin
-          .from('users')
-          .upsert({
+        if (authData?.user) {
+          await supabaseAdmin.from('users').upsert({
             id: authData.user.id,
             email,
             name,
             profiles,
-            mustChangePassword: false, // Set to false as requested "fixed" password
+            mustChangePassword: false,
             activityStatus: 'Activo',
             locationStatus: 'En el centro'
           });
-
-        if (dbError) {
-          console.error('Error creating master user record:', dbError);
-        } else {
-          console.log('Master user created successfully');
+          console.log('Master user created successfully.');
         }
-      } else {
-        console.log('Master user already exists, updating password to fixed value...');
-        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-          existingUser.id,
-          { password }
-        );
-        if (updateError) {
-          console.error('Error updating master user password:', updateError);
-        } else {
-          // Also ensure the database record is correct
-          await supabaseAdmin
-            .from('users')
-            .upsert({
-              id: existingUser.id,
-              email,
-              name,
-              profiles,
-              mustChangePassword: false,
-              activityStatus: 'Activo',
-              locationStatus: 'En el centro'
-            });
-          console.log('Master user password updated successfully to fixed value');
-        }
+      } catch (err) {
+        console.error('Unexpected error during master seeding:', err);
       }
     };
     seedMaster();
@@ -111,9 +102,12 @@ async function startServer() {
         return res.status(500).json({ error: 'Supabase Service Role Key not configured.' });
       }
 
-      const { email, password, name, profiles } = req.body;
+      const { email, password, name, profiles, contractType, roleType, phone, address } = req.body;
+      console.log('API: Creating user:', email);
 
-      // 1. Create user in Supabase Auth
+      let userId: string | null = null;
+
+      // 1. Try to create user in Supabase Auth
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
@@ -121,27 +115,70 @@ async function startServer() {
         user_metadata: { name }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.log('Auth error:', authError.message, 'Status:', authError.status);
+        // If user already exists, find their ID
+        const isAlreadyRegistered = 
+          authError.message.toLowerCase().includes('already been registered') || 
+          authError.message.toLowerCase().includes('already exists') ||
+          authError.status === 422;
 
-      // 2. Create user in our 'users' table
+        if (isAlreadyRegistered) {
+          console.log('User already registered in Auth, finding ID...');
+          const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+          const existingUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+          if (existingUser) {
+            userId = existingUser.id;
+            console.log('Found existing user ID:', userId);
+            // Optionally update password if provided
+            if (password) {
+              await supabaseAdmin.auth.admin.updateUserById(userId, { password });
+            }
+          } else {
+            console.error('User reported as registered but not found in list.');
+            throw authError;
+          }
+        } else {
+          throw authError;
+        }
+      } else {
+        userId = authData.user.id;
+        console.log('New user created in Auth:', userId);
+      }
+
+      if (!userId) {
+        throw new Error('Failed to determine user ID.');
+      }
+
+      // 2. Upsert user in our 'users' table
+      console.log('Upserting user record in DB...');
       const { error: dbError } = await supabaseAdmin
         .from('users')
-        .insert({
-          id: authData.user.id,
+        .upsert({
+          id: userId,
           email,
           name,
           profiles,
+          contractType,
+          roleType,
+          phone,
+          address,
           mustChangePassword: true,
           activityStatus: 'Activo',
-          locationStatus: 'En el centro'
+          locationStatus: 'En el centro',
+          avatar: `https://i.pravatar.cc/150?u=${userId}`
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('DB Error:', dbError);
+        throw dbError;
+      }
 
-      res.json({ success: true, user: authData.user });
+      console.log('User saved successfully.');
+      res.json({ success: true, userId });
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      res.status(500).json({ error: error.message });
+      console.error('Error in create-user API:', error);
+      res.status(500).json({ error: error.message || 'Error desconocido al guardar el usuario' });
     }
   });
 
