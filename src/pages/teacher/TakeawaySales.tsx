@@ -76,15 +76,15 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
                 <div className="grid grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Venta</label>
-                        <input type="date" name="sale_date" value={formState.sale_date} onChange={handleChange} required={formState.status === 'Activo'} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                        <input type="date" name="sale_date" value={formState.sale_date} onChange={handleChange} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hora Recogida</label>
-                        <input type="time" name="pickup_time" value={formState.pickup_time} onChange={handleChange} required={formState.status === 'Activo'} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                        <input type="time" name="pickup_time" value={formState.pickup_time} onChange={handleChange} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hora Fin</label>
-                        <input type="time" name="end_time" value={formState.end_time} onChange={handleChange} required={formState.status === 'Activo'} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                        <input type="time" name="end_time" value={formState.end_time} onChange={handleChange} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                     </div>
                 </div>
                 {/* ... rest of the form ... */}
