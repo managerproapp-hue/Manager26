@@ -3,10 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/Card';
-import { Recipe, Product, RecipeIngredient } from '../../types';
+import { Recipe, Product, RecipeIngredient, DEFAULT_CATEGORIES } from '../../types';
 import { PlusIcon, TrashIcon, PrinterIcon } from '../../components/icons';
 import { Modal } from '../../components/Modal';
 import { useCompany } from '../../contexts/CompanyContext';
+import { calculateIngredientCost, areUnitsCompatible } from '../../lib/unitConverter';
 
 const ALLERGENS_LIST = ["Gluten", "Crustáceos", "Huevos", "Pescado", "Cacahuetes", "Soja", "Lácteos", "Frutos de cáscara", "Apio", "Mostaza", "Sésamo", "Sulfitos", "Altramuces", "Moluscos"];
 
@@ -82,9 +83,11 @@ const LabelPreviewModal: React.FC<{ recipe: Recipe, company: any, onClose: () =>
 export const RecipeForm: React.FC = () => {
     const { recipeId } = useParams<{ recipeId?: string }>();
     const navigate = useNavigate();
-    const { recipes, setRecipes, products } = useData();
+    const { recipes, setRecipes, products, workspaceSettings } = useData();
     const { currentUser } = useAuth();
     const { companyInfo } = useCompany();
+
+    const categories = useMemo(() => workspaceSettings?.categories || DEFAULT_CATEGORIES, [workspaceSettings]);
 
     const [formState, setFormState] = useState<Omit<Recipe, 'id' | 'author_id'>>({
         name: '', description: '', photo: '', yield_amount: 1, yield_unit: 'raciones', category: '',
@@ -106,10 +109,22 @@ export const RecipeForm: React.FC = () => {
         if (recipeId) {
             const existingRecipe = recipes.find(r => r.id === recipeId);
             if (existingRecipe) {
-                setFormState(existingRecipe);
+                // Recalculate costs for all ingredients to ensure they are up to date
+                const updatedIngredients = existingRecipe.ingredients.map(ing => {
+                    const product = productsMap.get(ing.product_id);
+                    if (product) {
+                        const price = product.suppliers.sort((a,b) => a.price - b.price)[0]?.price || 0;
+                        return {
+                            ...ing,
+                            cost: calculateIngredientCost(ing.quantity, ing.unit, price, product.unit)
+                        };
+                    }
+                    return ing;
+                });
+                setFormState({ ...existingRecipe, ingredients: updatedIngredients });
             }
         }
-    }, [recipeId, recipes]);
+    }, [recipeId, recipes, productsMap]);
     
     const filteredProducts = useMemo(() => {
         if (!searchTerm) return [];
@@ -137,7 +152,14 @@ export const RecipeForm: React.FC = () => {
     
     const addIngredient = (product: Product) => {
         if (!formState.ingredients.some(i => i.product_id === product.id)) {
-            const newIngredient: RecipeIngredient = { product_id: product.id, quantity: 1, unit: product.unit };
+            const price = product.suppliers.sort((a,b) => a.price - b.price)[0]?.price || 0;
+            const cost = calculateIngredientCost(1, product.unit, price, product.unit);
+            const newIngredient: RecipeIngredient = { 
+                product_id: product.id, 
+                quantity: 1, 
+                unit: product.unit,
+                cost: cost
+            };
             setFormState(prev => ({...prev, ingredients: [...prev.ingredients, newIngredient]}));
         }
         setSearchTerm('');
@@ -145,7 +167,15 @@ export const RecipeForm: React.FC = () => {
     
     const handleIngredientChange = (index: number, field: 'quantity' | 'unit', value: string | number) => {
         const newIngredients = [...formState.ingredients];
-        newIngredients[index] = { ...newIngredients[index], [field]: value };
+        const ing = { ...newIngredients[index], [field]: value };
+        
+        const product = productsMap.get(ing.product_id);
+        if (product) {
+            const price = product.suppliers.sort((a,b) => a.price - b.price)[0]?.price || 0;
+            ing.cost = calculateIngredientCost(ing.quantity, ing.unit, price, product.unit);
+        }
+        
+        newIngredients[index] = ing;
         setFormState(prev => ({...prev, ingredients: newIngredients}));
     };
 
@@ -155,11 +185,9 @@ export const RecipeForm: React.FC = () => {
     
     const calculatedCost = useMemo(() => {
         return formState.ingredients.reduce((total, ing) => {
-            const product = productsMap.get(ing.product_id);
-            const price = product?.suppliers.sort((a,b) => a.price - b.price)[0]?.price || 0;
-            return total + (price * ing.quantity);
+            return total + (ing.cost || 0);
         }, 0);
-    }, [formState.ingredients, productsMap]);
+    }, [formState.ingredients]);
 
     const costPerServing = (calculatedCost / (formState.yield_amount || 1));
 
@@ -212,7 +240,18 @@ export const RecipeForm: React.FC = () => {
                                     <div className="flex gap-4">
                                         <input type="number" placeholder="Raciones" value={formState.yield_amount} onChange={handleFormChange} name="yield_amount" min="1" className="w-1/3 p-2 border rounded"/>
                                         <input type="text" placeholder="Unidad" value={formState.yield_unit} onChange={handleFormChange} name="yield_unit" className="w-1/3 p-2 border rounded"/>
-                                        <input type="text" placeholder="Categoría" value={formState.category} onChange={handleFormChange} name="category" className="w-1/3 p-2 border rounded"/>
+                                        <select 
+                                            name="category" 
+                                            value={formState.category} 
+                                            onChange={handleFormChange} 
+                                            className="w-1/3 p-2 border rounded dark:bg-gray-700"
+                                            required
+                                        >
+                                            <option value="">Seleccionar Categoría</option>
+                                            {categories.map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <textarea placeholder="Descripción corta" value={formState.description} onChange={handleFormChange} name="description" rows={2} className="w-full p-2 border rounded" />
                                 </div>
@@ -230,15 +269,46 @@ export const RecipeForm: React.FC = () => {
                                 )}
                             </div>
                             <div className="space-y-2 max-h-60 overflow-y-auto">
-                                {formState.ingredients.map((ing, index) => (
-                                    <div key={ing.product_id} className="grid grid-cols-12 gap-2 items-center">
-                                        <span className="col-span-6">{productsMap.get(ing.product_id)?.name}</span>
-                                        {/* FIX: Add step attribute to allow decimal quantities. */}
-                                        <input type="number" step="0.01" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value))} className="col-span-2 p-1 border rounded dark:bg-gray-700"/>
-                                        <input type="text" value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="col-span-2 p-1 border rounded dark:bg-gray-700"/>
-                                        <div className="col-span-2 flex justify-end"><button type="button" onClick={() => removeIngredient(index)} className="text-red-500 p-1"><TrashIcon className="w-5 h-5"/></button></div>
-                                    </div>
-                                ))}
+                                {formState.ingredients.map((ing, index) => {
+                                    const product = productsMap.get(ing.product_id);
+                                    const isCompatible = areUnitsCompatible(ing.unit, product?.unit || '');
+                                    
+                                    return (
+                                        <div key={ing.product_id} className="grid grid-cols-12 gap-2 items-center">
+                                            <span className="col-span-4 truncate" title={product?.name}>{product?.name}</span>
+                                            <input 
+                                                type="number" 
+                                                step="0.01" 
+                                                value={ing.quantity} 
+                                                onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value))} 
+                                                className="col-span-2 p-1 border rounded dark:bg-gray-700"
+                                            />
+                                            <select 
+                                                value={ing.unit} 
+                                                onChange={e => handleIngredientChange(index, 'unit', e.target.value)} 
+                                                className="col-span-2 p-1 border rounded dark:bg-gray-700"
+                                            >
+                                                <option value="kg">kg</option>
+                                                <option value="g">g</option>
+                                                <option value="l">l</option>
+                                                <option value="ml">ml</option>
+                                                <option value="ud">ud</option>
+                                                <option value="unidad">unidad</option>
+                                            </select>
+                                            <span className={`col-span-2 text-right font-mono text-sm ${!isCompatible ? 'text-red-500' : ''}`}>
+                                                {(ing.cost || 0).toFixed(2)}€
+                                            </span>
+                                            <div className="col-span-2 flex justify-end items-center space-x-1">
+                                                {!isCompatible && (
+                                                    <span className="text-red-500 cursor-help" title="Unidades incompatibles (Peso vs Volumen)">⚠️</span>
+                                                )}
+                                                <button type="button" onClick={() => removeIngredient(index)} className="text-red-500 p-1">
+                                                    <TrashIcon className="w-5 h-5"/>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </Card>
 

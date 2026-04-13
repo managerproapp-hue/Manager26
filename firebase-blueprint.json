@@ -139,6 +139,17 @@
         "quantity": { "type": "number" },
         "unit": { "type": "string" }
       }
+    },
+    "WorkspaceSettings": {
+      "title": "WorkspaceSettings",
+      "description": "Settings specific to a workspace",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "categoryConfigs": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["workspaceId", "categories"]
     }
   },
   "firestore": {
@@ -152,11 +163,17 @@
     "/sales": { "schema": "Sale", "description": "Collection of sales" },
     "/messages": { "schema": "Message", "description": "Collection of messages" },
     "/classrooms": { "schema": "Classroom", "description": "Collection of classrooms" },
-    "/classroomProducts": { "schema": "ClassroomProduct", "description": "Collection of classroom products" },
-    "/classroomSuppliers": { "schema": "ClassroomSupplier", "description": "Collection of classroom suppliers" },
-    "/classroomEvents": { "schema": "ClassroomEvent", "description": "Collection of classroom events" },
-    "/classroomOrders": { "schema": "ClassroomOrder", "description": "Collection of classroom orders" },
-    "/serviceGroups": { "schema": "ServiceGroup", "description": "Collection of service groups" },
-    "/services": { "schema": "Service", "description": "Collection of services" }
+    "/classroom_products": { "schema": "ClassroomProduct", "description": "Collection of classroom products" },
+    "/classroom_suppliers": { "schema": "ClassroomSupplier", "description": "Collection of classroom suppliers" },
+    "/classroom_events": { "schema": "ClassroomEvent", "description": "Collection of classroom events" },
+    "/classroom_orders": { "schema": "ClassroomOrder", "description": "Collection of classroom orders" },
+    "/service_groups": { "schema": "ServiceGroup", "description": "Collection of service groups" },
+    "/services": { "schema": "Service", "description": "Collection of services" },
+    "/training_cycles": { "schema": "TrainingCycle", "description": "Collection of training cycles" },
+    "/modules": { "schema": "Module", "description": "Collection of modules" },
+    "/groups": { "schema": "Group", "description": "Collection of groups" },
+    "/assignments": { "schema": "Assignment", "description": "Collection of assignments" },
+    "/mini_economato_stock": { "schema": "StockItem", "description": "Collection of mini economato stock" },
+    "/workspace_settings/{workspaceId}": { "schema": "WorkspaceSettings", "description": "Settings specific to a workspace" }
   }
 }

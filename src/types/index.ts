@@ -30,6 +30,21 @@ export type ProductState = 'Fresco' | 'Congelado' | 'Otros' | 'Conservas' | 'Ahu
 export type WarehouseStatus = 'Disponible' | 'Bajo Pedido' | 'Descontinuado';
 export type ReceptionLineStatus = 'pendiente' | 'ok' | 'parcial' | 'incidencia';
 
+export interface CategoryConfig {
+  name: string;
+  colors: string[]; // Up to 3 colors
+}
+
+export interface WorkspaceSettings {
+  workspaceId: string;
+  categories: string[];
+  categoryConfigs?: CategoryConfig[];
+}
+
+export const DEFAULT_CATEGORIES = [
+    "Entrantes", "Principales", "Postres", "Bebidas", "Salsas", "Guarniciones"
+];
+
 export interface User {
   id: string;
   name: string;
@@ -37,6 +52,12 @@ export interface User {
   password?: string;
   avatar: string;
   profiles: Profile[];
+  workspaceId?: string;
+  teacherName?: string;
+  teacherLogo?: string;
+  instituteName?: string;
+  instituteLogo?: string;
+  role?: 'admin' | 'user';
   activity_status: UserActivityStatus;
   location_status: UserLocationStatus;
   contract_type?: 'Fijo' | 'Interino';
@@ -183,6 +204,7 @@ export interface RecipeIngredient {
   product_id: string;
   quantity: number;
   unit: string;
+  cost?: number;
 }
 
 export interface Recipe {

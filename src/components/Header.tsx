@@ -26,8 +26,12 @@ export const Header: React.FC = () => {
               <span>{academicYear}</span>
           </div>
           <div className="flex items-center space-x-2 bg-indigo-600 text-white font-bold text-sm py-2 px-4 rounded-lg shadow">
-              <img src={companyInfo.logo} alt="Logo de la Empresa" className="h-5 w-auto" />
-              <span>{companyInfo.name}</span>
+              {currentUser.instituteLogo ? (
+                  <img src={currentUser.instituteLogo} alt={currentUser.instituteName} className="h-5 w-auto" />
+              ) : (
+                  <img src={companyInfo.logo} alt="Logo de la Empresa" className="h-5 w-auto" />
+              )}
+              <span>{currentUser.instituteName || companyInfo.name}</span>
           </div>
           
           {currentUser.profiles.length > 1 && (
@@ -55,7 +59,7 @@ export const Header: React.FC = () => {
         >
           <Avatar user={currentUser} className="w-10 h-10" />
           <div className="text-left hidden md:block">
-            <p className="font-semibold text-gray-800 dark:text-gray-200">{currentUser.name}</p>
+            <p className="font-semibold text-gray-800 dark:text-gray-200">{currentUser.teacherName || currentUser.name}</p>
             <p className="text-xs text-gray-500">
                 {selectedProfile ? getProfileDisplayName(selectedProfile) : ''}
             </p>

@@ -8,7 +8,7 @@ import {
     User, Product, Supplier, Event, Order, Incident, 
     TrainingCycle, Module, Group, Assignment, Recipe, StockItem, Sale, Message,
     Classroom, ClassroomProduct, ClassroomSupplier, ClassroomEvent, ClassroomOrder,
-    ServiceGroup, Service
+    ServiceGroup, Service, WorkspaceSettings
 } from '../types';
 
 export interface DataContextType {
@@ -33,6 +33,7 @@ export interface DataContextType {
     classroom_orders: ClassroomOrder[];
     service_groups: ServiceGroup[];
     services: Service[];
+    workspaceSettings: WorkspaceSettings | null;
     setUsers: (data: User[] | ((prev: User[]) => User[])) => void;
     setProducts: (data: Product[] | ((prev: Product[]) => Product[])) => void;
     setSuppliers: (data: Supplier[] | ((prev: Supplier[]) => Supplier[])) => void;
@@ -54,6 +55,7 @@ export interface DataContextType {
     setClassroomOrders: (data: ClassroomOrder[] | ((prev: ClassroomOrder[]) => ClassroomOrder[])) => void;
     setServiceGroups: (data: ServiceGroup[] | ((prev: ServiceGroup[]) => ServiceGroup[])) => void;
     setServices: (data: Service[] | ((prev: Service[]) => Service[])) => void;
+    setWorkspaceSettings: (settings: WorkspaceSettings) => void;
     loadDemoData: () => Promise<void>;
     seedInitialData: () => Promise<void>;
 }
@@ -82,6 +84,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [classroom_orders, setClassroomOrdersState] = useState<ClassroomOrder[]>([]);
     const [service_groups, setServiceGroupsState] = useState<ServiceGroup[]>([]);
     const [services, setServicesState] = useState<Service[]>([]);
+    const [workspaceSettings, setWorkspaceSettingsState] = useState<WorkspaceSettings | null>(null);
     const { currentUser } = useAuth();
 
     useEffect(() => {
@@ -123,8 +126,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
         });
 
+        let unsubWorkspaceSettings: () => void;
+        if (currentUser.workspaceId) {
+            unsubWorkspaceSettings = onSnapshot(doc(db, 'workspace_settings', currentUser.workspaceId), (docSnap) => {
+                if (docSnap.exists()) {
+                    setWorkspaceSettingsState(docSnap.data() as WorkspaceSettings);
+                } else {
+                    setWorkspaceSettingsState(null);
+                }
+            }, (error) => {
+                console.error("Error listening to workspace_settings:", error);
+            });
+        }
+
         return () => {
             unsubscribes.forEach(unsub => unsub());
+            if (unsubWorkspaceSettings) unsubWorkspaceSettings();
         };
     }, [currentUser]);
 
@@ -175,6 +192,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const setServiceGroups = (data: any) => updateCollection('service_groups', data, service_groups);
     const setServices = (data: any) => updateCollection('services', data, services);
 
+    const setWorkspaceSettings = async (settings: WorkspaceSettings) => {
+        if (!currentUser?.workspaceId) return;
+        try {
+            await setDoc(doc(db, 'workspace_settings', currentUser.workspaceId), settings, { merge: true });
+        } catch (err) {
+            console.error("Failed to update workspace_settings:", err);
+        }
+    };
+
     const seedData = async (data: any) => {
         for (const key of Object.keys(data)) {
             const items = data[key];
@@ -201,18 +227,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         users, products, suppliers, events, orders, incidents, 
         training_cycles, modules, groups, assignments, recipes, sales, mini_economato_stock, messages,
         classrooms, classroom_products, classroom_suppliers, classroom_events, classroom_orders,
-        service_groups, services,
+        service_groups, services, workspaceSettings,
         setUsers, setProducts, setSuppliers, setEvents, setOrders, setIncidents,
         setTrainingCycles, setModules, setGroups, setAssignments, setRecipes, setSales,
         setMiniEconomatoStock, setMessages, setClassrooms, setClassroomProducts,
         setClassroomSuppliers, setClassroomEvents, setClassroomOrders,
-        setServiceGroups, setServices,
+        setServiceGroups, setServices, setWorkspaceSettings,
         loadDemoData, seedInitialData
     }), [
         users, products, suppliers, events, orders, incidents, 
         training_cycles, modules, groups, assignments, recipes, sales, mini_economato_stock, messages,
         classrooms, classroom_products, classroom_suppliers, classroom_events, classroom_orders,
-        service_groups, services
+        service_groups, services, workspaceSettings
     ]);
 
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

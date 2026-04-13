@@ -5,9 +5,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/Card';
 import { Modal } from '../../components/Modal';
 import { ComposeMessageModal } from '../shared/Messaging';
-import { PlusIcon, DownloadIcon, ShareIcon, PencilIcon } from '../../components/icons';
+import { PlusIcon, DownloadIcon, ShareIcon, PencilIcon, CogIcon } from '../../components/icons';
 import { printPage } from '../../utils/export';
 import { Recipe, Message, User } from '../../types';
+import { SettingsModal } from '../../components/SettingsModal';
 
 const ShareRecipeModal: React.FC<{ 
     recipe: Recipe; 
@@ -54,6 +55,7 @@ export const RecipeManager: React.FC = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [recipeToShare, setRecipeToShare] = useState<Recipe | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
 
     const usersMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
     const productsMap = useMemo(() => {
@@ -110,6 +112,13 @@ export const RecipeManager: React.FC = () => {
              <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">Mis Recetas</h1>
                 <div className="no-print flex items-center space-x-2">
+                    <button 
+                        onClick={() => setShowSettings(true)}
+                        className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 flex items-center dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                        title="Configurar Categorías"
+                    >
+                        <CogIcon className="w-5 h-5 mr-1" /> Configurar
+                    </button>
                     <Link to="/teacher/recipes/new" className="bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 flex items-center">
                         <PlusIcon className="w-5 h-5 mr-1" /> Nueva Receta
                     </Link>
@@ -176,6 +185,10 @@ export const RecipeManager: React.FC = () => {
                     onSend={handleShare}
                     users={users}
                 />
+            )}
+
+            {showSettings && (
+                <SettingsModal onClose={() => setShowSettings(false)} />
             )}
         </div>
     );

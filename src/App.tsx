@@ -1,11 +1,12 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import { CompanyProvider } from './contexts/CompanyContext';
 import { CreatorProvider } from './contexts/CreatorContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { Login } from './pages/shared/Login';
 import { ProfileSelector } from './pages/shared/ProfileSelector';
@@ -55,33 +56,31 @@ import { StudentLayout } from './pages/layouts/StudentLayout';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 
 import { Profile } from './types';
-
-
 import { useAuth } from './contexts/AuthContext';
+import { SettingsModal } from './components/SettingsModal';
 
 const RedirectHandler: React.FC = () => {
   const { currentUser, selectedProfile } = useAuth();
   
-  console.log('RedirectHandler - currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
-
   if (!currentUser) {
-    console.log('RedirectHandler - No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   if (!selectedProfile) {
-    console.log('RedirectHandler - No profile, redirecting to select-profile');
     return <Navigate to="/select-profile" replace />;
   }
   
-  console.log('RedirectHandler - Redirecting to dashboard:', selectedProfile);
   return <Navigate to={`/${selectedProfile}/dashboard`} replace />;
 };
 
 const AppContent: React.FC = () => {
   const { isAuthReady, currentUser, selectedProfile } = useAuth();
-  const location = useLocation();
+  const [showMandatorySettings, setShowMandatorySettings] = React.useState(false);
 
-  console.log('AppContent - Path:', location.pathname, 'isAuthReady:', isAuthReady, 'currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
+  const isProfileIncomplete = currentUser && (!currentUser.instituteName || !currentUser.teacherName) && selectedProfile === Profile.TEACHER;
+
+  React.useEffect(() => {
+    setShowMandatorySettings(!!isProfileIncomplete);
+  }, [isProfileIncomplete]);
 
   if (!isAuthReady) {
     return (
@@ -92,116 +91,104 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/select-profile" element={<ProfileSelector />} />
-      <Route path="/blocked-access" element={<BlockedAccess />} />
-      <Route path="/" element={<RedirectHandler />} />
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/select-profile" element={<ProfileSelector />} />
+        <Route path="/blocked-access" element={<BlockedAccess />} />
+        <Route path="/" element={<RedirectHandler />} />
 
-      {/* Creator Routes */}
-      <Route element={<ProtectedRoute allowedProfiles={[Profile.CREATOR]} />}>
-        <Route path="/creator" element={<CreatorLayout />}>
-          <Route path="dashboard" element={<CreatorDashboard />} />
-          <Route path="user-manager" element={<UserManager />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
+        <Route element={<ProtectedRoute allowedProfiles={[Profile.CREATOR]} />}>
+          <Route path="/creator" element={<CreatorLayout />}>
+            <Route path="dashboard" element={<CreatorDashboard />} />
+            <Route path="user-manager" element={<UserManager />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Admin Routes */}
-      <Route element={<ProtectedRoute allowedProfiles={[Profile.ADMIN]} />}>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="teachers" element={<TeacherManager />} />
-          <Route path="products" element={<ProductManager />} />
-          <Route path="suppliers" element={<SupplierManager />} />
-          <Route path="events" element={<EventManager />} />
-          <Route path="service-planner" element={<ServicePlanner />} />
-          <Route path="assignments" element={<AssignmentManager />} />
-          <Route path="expenses" element={<ExpenseManager />} />
-          <Route path="expenses/:teacher_id" element={<ExpenseDetailByTeacher />} />
-          <Route path="company" element={<CompanyData />} />
-          <Route path="support" element={<Support />} />
-          <Route path="classrooms" element={<ClassroomManager />} />
-          <Route path="messaging" element={<Messaging />} />
-          <Route path="profile" element={<MyProfile />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
-      </Route>
-
-      {/* Manager Routes */}
-      <Route element={<ProtectedRoute allowedProfiles={[Profile.ALMACEN]} />}>
-        <Route path="/almacen" element={<ManagerLayout />}>
-            <Route path="dashboard" element={<ManagerDashboard />} />
-            {/* FIX: Combined redundant routes for process-orders into a single route with an optional parameter. */}
-            <Route path="process-orders/:eventId?" element={<ProcessOrders />} />
-            {/* FIX: Combined redundant routes for warehouse-order into a single route with an optional parameter. */}
-            <Route path="warehouse-order/:eventId?" element={<WarehouseOrder />} />
-            <Route path="economato" element={<EconomatoManager />} />
-            <Route path="mini-economato" element={<MiniEconomato />} />
-            <Route path="order-history" element={<OrderHistory />} />
+        <Route element={<ProtectedRoute allowedProfiles={[Profile.ADMIN]} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="teachers" element={<TeacherManager />} />
             <Route path="products" element={<ProductManager />} />
             <Route path="suppliers" element={<SupplierManager />} />
+            <Route path="events" element={<EventManager />} />
+            <Route path="service-planner" element={<ServicePlanner />} />
+            <Route path="assignments" element={<AssignmentManager />} />
+            <Route path="expenses" element={<ExpenseManager />} />
+            <Route path="expenses/:teacher_id" element={<ExpenseDetailByTeacher />} />
+            <Route path="company" element={<CompanyData />} />
+            <Route path="support" element={<Support />} />
+            <Route path="classrooms" element={<ClassroomManager />} />
             <Route path="messaging" element={<Messaging />} />
             <Route path="profile" element={<MyProfile />} />
             <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Teacher Routes */}
-      <Route element={<ProtectedRoute allowedProfiles={[Profile.TEACHER]} />}>
-        <Route path="/teacher" element={<TeacherLayout />}>
-            <Route path="dashboard" element={<TeacherDashboard />} />
-            <Route path="service-planner" element={<ServiceViewer />} />
-            <Route path="order-portal" element={<OrderPortal />} />
-            <Route path="order-portal/new/:eventId" element={<OrderForm />} />
-            <Route path="order-portal/edit/:orderId" element={<OrderForm />} />
-            <Route path="order-history" element={<TeacherOrderHistory />} />
-            <Route path="sales" element={<SalesManager />} />
-            <Route path="recipes" element={<RecipeManager />} />
-            <Route path="recipes/new" element={<RecipeForm />} />
-            <Route path="recipes/edit/:recipeId" element={<RecipeForm />} />
-            <Route path="aula" element={<ClassroomList />} />
-            <Route path="messaging" element={<Messaging />} />
-            <Route path="profile" element={<MyProfile />} />
-            <Route index element={<Navigate to="dashboard" replace />} />
+        <Route element={<ProtectedRoute allowedProfiles={[Profile.ALMACEN]} />}>
+          <Route path="/almacen" element={<ManagerLayout />}>
+              <Route path="dashboard" element={<ManagerDashboard />} />
+              <Route path="process-orders/:eventId?" element={<ProcessOrders />} />
+              <Route path="warehouse-order/:eventId?" element={<WarehouseOrder />} />
+              <Route path="economato" element={<EconomatoManager />} />
+              <Route path="mini-economato" element={<MiniEconomato />} />
+              <Route path="order-history" element={<OrderHistory />} />
+              <Route path="products" element={<ProductManager />} />
+              <Route path="suppliers" element={<SupplierManager />} />
+              <Route path="messaging" element={<Messaging />} />
+              <Route path="profile" element={<MyProfile />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
         </Route>
-      </Route>
-      
-      {/* Student Routes (Sandboxed) */}
-      <Route element={<ProtectedRoute allowedProfiles={[Profile.STUDENT]} />}>
-        <Route path="/student" element={<StudentLayout />}>
-            <Route path="dashboard" element={<StudentDashboard />} />
-            
-            {/* Simulated Teacher Routes */}
-            <Route path="teacher-dashboard" element={<TeacherDashboard />} />
-            <Route path="order-portal" element={<OrderPortal />} />
-            <Route path="order-portal/new/:eventId" element={<OrderForm />} />
-            <Route path="order-portal/edit/:orderId" element={<OrderForm />} />
-            <Route path="order-history" element={<TeacherOrderHistory />} />
-            <Route path="recipes" element={<RecipeManager />} />
-            <Route path="recipes/new" element={<RecipeForm />} />
-            <Route path="recipes/edit/:recipeId" element={<RecipeForm />} />
-            
-            {/* Simulated Manager Routes */}
-            <Route path="almacen-dashboard" element={<ManagerDashboard />} />
-            <Route path="process-orders/:eventId?" element={<ProcessOrders />} />
-            <Route path="economato" element={<EconomatoManager />} />
-            <Route path="mini-economato" element={<MiniEconomato />} />
-            <Route path="almacen-order-history" element={<OrderHistory />} />
-            <Route path="products" element={<ProductManager />} />
-            <Route path="suppliers" element={<SupplierManager />} />
 
-            {/* Common Routes */}
-            <Route path="messaging" element={<Messaging />} />
-            <Route path="profile" element={<MyProfile />} />
-            
-            <Route index element={<Navigate to="dashboard" replace />} />
+        <Route element={<ProtectedRoute allowedProfiles={[Profile.TEACHER]} />}>
+          <Route path="/teacher" element={<TeacherLayout />}>
+              <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="service-planner" element={<ServiceViewer />} />
+              <Route path="order-portal" element={<OrderPortal />} />
+              <Route path="order-portal/new/:eventId" element={<OrderForm />} />
+              <Route path="order-portal/edit/:orderId" element={<OrderForm />} />
+              <Route path="order-history" element={<TeacherOrderHistory />} />
+              <Route path="sales" element={<SalesManager />} />
+              <Route path="recipes" element={<RecipeManager />} />
+              <Route path="recipes/new" element={<RecipeForm />} />
+              <Route path="recipes/edit/:recipeId" element={<RecipeForm />} />
+              <Route path="aula" element={<ClassroomList />} />
+              <Route path="messaging" element={<Messaging />} />
+              <Route path="profile" element={<MyProfile />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
         </Route>
-      </Route>
+        
+        <Route element={<ProtectedRoute allowedProfiles={[Profile.STUDENT]} />}>
+          <Route path="/student" element={<StudentLayout />}>
+              <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="teacher-dashboard" element={<TeacherDashboard />} />
+              <Route path="order-portal" element={<OrderPortal />} />
+              <Route path="order-portal/new/:eventId" element={<OrderForm />} />
+              <Route path="order-portal/edit/:orderId" element={<OrderForm />} />
+              <Route path="order-history" element={<TeacherOrderHistory />} />
+              <Route path="recipes" element={<RecipeManager />} />
+              <Route path="recipes/new" element={<RecipeForm />} />
+              <Route path="recipes/edit/:recipeId" element={<RecipeForm />} />
+              <Route path="almacen-dashboard" element={<ManagerDashboard />} />
+              <Route path="process-orders/:eventId?" element={<ProcessOrders />} />
+              <Route path="economato" element={<EconomatoManager />} />
+              <Route path="mini-economato" element={<MiniEconomato />} />
+              <Route path="almacen-order-history" element={<OrderHistory />} />
+              <Route path="products" element={<ProductManager />} />
+              <Route path="suppliers" element={<SupplierManager />} />
+              <Route path="messaging" element={<Messaging />} />
+              <Route path="profile" element={<MyProfile />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
+        </Route>
 
-      {/* Fallback for unknown routes */}
-      <Route path="*" element={<RedirectHandler />} />
-    </Routes>
+        <Route path="*" element={<RedirectHandler />} />
+      </Routes>
+      {showMandatorySettings && <SettingsModal onClose={() => setShowMandatorySettings(false)} />}
+    </>
   );
 };
 
@@ -213,7 +200,9 @@ const App: React.FC = () => {
           <Router>
             <AuthProvider>
               <DataProvider>
-                <AppContent />
+                <ErrorBoundary>
+                  <AppContent />
+                </ErrorBoundary>
               </DataProvider>
             </AuthProvider>
           </Router>
