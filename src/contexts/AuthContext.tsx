@@ -55,14 +55,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else {
             // Create user if it doesn't exist
             const userEmail = firebaseUser.email || '';
+            const isSuperUser = SUPER_USER_EMAILS.includes(userEmail);
             const newUser: User = {
               id: firebaseUser.uid,
               email: userEmail,
               name: firebaseUser.displayName || userEmail.split('@')[0],
-              profiles: SUPER_USER_EMAILS.includes(userEmail) 
+              profiles: isSuperUser 
                 ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
-                : [Profile.STUDENT],
-              activity_status: 'Activo',
+                : [Profile.TEACHER], // Default to Teacher so they appear in TeacherManager
+              activity_status: isSuperUser ? 'Activo' : 'De Baja', // Default to inactive
               location_status: 'En el centro',
               avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`
             };
@@ -95,14 +96,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!userDoc.exists()) {
         const userEmail = result.user.email || '';
+        const isSuperUser = SUPER_USER_EMAILS.includes(userEmail);
         const newUser: User = {
           id: result.user.uid,
           email: userEmail,
           name: result.user.displayName || userEmail.split('@')[0],
-          profiles: SUPER_USER_EMAILS.includes(userEmail) 
+          profiles: isSuperUser 
             ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
-            : [Profile.STUDENT],
-          activity_status: 'Activo',
+            : [Profile.TEACHER], // Default to Teacher so they appear in TeacherManager
+          activity_status: isSuperUser ? 'Activo' : 'De Baja', // Default to inactive
           location_status: 'En el centro',
           avatar: result.user.photoURL || `https://i.pravatar.cc/150?u=${result.user.uid}`
         };

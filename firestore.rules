@@ -15,7 +15,7 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() &&
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profiles.hasAny(['admin', 'creator']) ||
-          ((request.auth.token.email == "jcbprofesor@gmail.com" || request.auth.token.email == "managerproapp@gmail.com") && request.auth.token.email_verified == true));
+          (request.auth.token.email == "jcbprofesor@gmail.com" || request.auth.token.email == "managerproapp@gmail.com"));
     }
 
     function isAlmacen() {

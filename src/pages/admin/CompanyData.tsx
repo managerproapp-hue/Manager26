@@ -1,6 +1,6 @@
 
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useCompany } from '../../contexts/CompanyContext';
 import { Card } from '../../components/Card';
 import { CompanyIcon } from '../../components/icons';
@@ -12,6 +12,10 @@ export const CompanyData: React.FC = () => {
   const { users } = useData();
   const [formState, setFormState] = useState<Company>(companyInfo);
   const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    setFormState(companyInfo);
+  }, [companyInfo]);
 
   // FIX: Replaced Profile.MANAGER with Profile.ALMACEN, which exists in the enum.
   const managerUsers = useMemo(() => users.filter(u => u.profiles.includes(Profile.ALMACEN) && !SUPER_USER_EMAILS.includes(u.email)), [users]);
@@ -25,6 +29,10 @@ export const CompanyData: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logo' | 'print_logo') => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 500 * 1024) {
+        alert('El archivo es demasiado grande. Por favor, sube una imagen de menos de 500KB.');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormState({ ...formState, [field]: reader.result as string });

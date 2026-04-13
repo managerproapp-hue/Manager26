@@ -14,6 +14,10 @@ export const CreatorDashboard: React.FC = () => {
 
   const [formState, setFormState] = useState<Creator>(creatorInfo);
 
+  React.useEffect(() => {
+    setFormState(creatorInfo);
+  }, [creatorInfo]);
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormState({ ...formState, [e.target.name]: e.target.value });
   };
@@ -21,6 +25,10 @@ export const CreatorDashboard: React.FC = () => {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 500 * 1024) {
+        alert('El archivo es demasiado grande. Por favor, sube una imagen de menos de 500KB.');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormState({ ...formState, logo: reader.result as string });

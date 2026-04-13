@@ -54,9 +54,6 @@ export const UserManager: React.FC = () => {
                     <button onClick={handleExport} className="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 mr-2 flex items-center">
                         <DownloadIcon className="w-5 h-5 mr-1" /> Exportar a CSV
                     </button>
-                    <button onClick={() => handleOpenModal()} className="bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 flex items-center">
-                        <PlusIcon className="w-5 h-5 mr-1" /> Nuevo Usuario
-                    </button>
                 </div>
             </div>
 
@@ -141,7 +138,6 @@ const UserFormModal: React.FC<{ user: User | null, onClose: () => void, onSave: 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <input type="text" name="name" value={formState.name} onChange={e => setFormState({ ...formState, name: e.target.value })} placeholder="Nombre Completo" required className="w-full p-2 border rounded dark:bg-gray-700" />
                 <input type="email" name="email" value={formState.email} onChange={e => setFormState({ ...formState, email: e.target.value })} placeholder="Email" required className="w-full p-2 border rounded dark:bg-gray-700" />
-                <input type="password" name="password" onChange={e => setFormState({ ...formState, password: e.target.value })} placeholder={user ? "Nueva contraseña (opcional)" : "Contraseña"} required={!user} className="w-full p-2 border rounded dark:bg-gray-700" />
                 
                 <div>
                     <label>Perfiles</label>

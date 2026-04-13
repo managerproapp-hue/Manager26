@@ -40,36 +40,6 @@ export const TeacherManager: React.FC = () => {
                 alert(`Error: ${error.message}`);
                 return;
             }
-        } else { // Creating
-            try {
-                const response = await fetch('/api/admin/create-user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: userData.email,
-                        password: userData.password || 'password123',
-                        name: userData.name,
-                        profiles: userData.profiles,
-                        contract_type: userData.contract_type,
-                        role_type: userData.role_type,
-                        phone: userData.phone,
-                        address: userData.address
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Error al crear el usuario');
-                }
-
-                const result = await response.json();
-                console.log('User created/linked successfully:', result.user_id);
-                alert('Usuario guardado correctamente.');
-            } catch (error: any) {
-                console.error('Error creating user:', error);
-                alert(`Error: ${error.message}`);
-                return;
-            }
         }
         setIsFormModalOpen(false);
         setSelectedUser(null);
@@ -100,9 +70,6 @@ export const TeacherManager: React.FC = () => {
                 <div className="no-print flex items-center">
                     <button onClick={handleExport} className="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 mr-2 flex items-center">
                         <DownloadIcon className="w-5 h-5 mr-1" /> Exportar a CSV
-                    </button>
-                    <button onClick={() => handleOpenFormModal()} className="bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 flex items-center">
-                        <PlusIcon className="w-5 h-5 mr-1" /> Nuevo Personal
                     </button>
                 </div>
             </div>
@@ -200,7 +167,6 @@ const UserFormModal: React.FC<{
     const [formState, setFormState] = useState({
         name: user?.name || '',
         email: user?.email || '',
-        password: '',
         profiles: user?.profiles || [],
         contract_type: user?.contract_type || 'Fijo',
         role_type: user?.role_type || 'Titular',
@@ -242,17 +208,16 @@ const UserFormModal: React.FC<{
             alert("Por favor, selecciona al menos un perfil.");
             return;
         }
-        onSave({ ...formState, password: formState.password || undefined });
+        onSave({ ...formState });
     };
 
-    const assignableProfiles = [Profile.ADMIN, Profile.ALMACEN, Profile.TEACHER];
+    const assignableProfiles = [Profile.ADMIN, Profile.ALMACEN, Profile.TEACHER, Profile.STUDENT];
 
     return (
         <Modal isOpen={true} onClose={onClose} title={user ? 'Editar Personal' : 'Nuevo Personal'}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <input type="text" name="name" value={formState.name} onChange={handleChange} placeholder="Nombre y Apellidos" required className="w-full p-2 border rounded dark:bg-gray-700"/>
                 <input type="email" name="email" value={formState.email} onChange={handleChange} placeholder="Email" required className="w-full p-2 border rounded dark:bg-gray-700"/>
-                <input type="password" name="password" value={formState.password} onChange={handleChange} placeholder={user ? "Nueva contraseña (opcional)" : "Contraseña"} required={!user} className="w-full p-2 border rounded dark:bg-gray-700"/>
                 
                 <div className="grid grid-cols-2 gap-4">
                     <input type="tel" name="phone" value={formState.phone} onChange={handleChange} placeholder="Teléfono" className="w-full p-2 border rounded dark:bg-gray-700"/>
