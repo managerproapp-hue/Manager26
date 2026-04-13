@@ -3,6 +3,8 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/Card';
 import { Reservation } from '../../types';
+import { ALLERGEN_ICONS } from '../../lib/allergens';
+import { AlertTriangle } from 'lucide-react';
 
 export const TakeawayCatalog: React.FC = () => {
     const { sale_items, reservations, setReservations } = useData();
@@ -39,7 +41,20 @@ export const TakeawayCatalog: React.FC = () => {
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
                             <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
                             <p className="text-sm">Raciones disponibles: {item.rations}</p>
-                            <p className="text-sm">Alérgenos: {item.allergens.join(', ')}</p>
+                            <div className="text-sm mt-2">
+                                <p className="font-semibold">Alérgenos:</p>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                    {item.allergens.map(allergen => {
+                                        const Icon = ALLERGEN_ICONS[allergen] || AlertTriangle;
+                                        return (
+                                            <div key={allergen} className="flex flex-col items-center" title={allergen}>
+                                                <Icon className="w-6 h-6" />
+                                                <span className="text-[10px]">{allergen}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                             {userReservation ? (
                                 <div className="mt-4 p-2 bg-green-100 text-green-800 rounded-md text-sm text-center">
                                     Reservado

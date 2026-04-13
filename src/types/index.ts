@@ -232,6 +232,7 @@ export interface Recipe {
     service_type?: string;
     client_description?: string;
     service_time?: string;
+    selected_allergens?: string[];
 }
 
 export interface StockItem {

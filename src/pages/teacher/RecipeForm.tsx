@@ -8,8 +8,30 @@ import { PlusIcon, TrashIcon, PrinterIcon } from '../../components/icons';
 import { Modal } from '../../components/Modal';
 import { useCompany } from '../../contexts/CompanyContext';
 import { calculateIngredientCost, areUnitsCompatible } from '../../lib/unitConverter';
+import { ALLERGENS_LIST, ALLERGEN_ICONS } from '../../lib/allergens';
+import { AlertTriangle } from 'lucide-react';
 
-const ALLERGENS_LIST = ["Gluten", "Crustáceos", "Huevos", "Pescado", "Cacahuetes", "Soja", "Lácteos", "Frutos de cáscara", "Apio", "Mostaza", "Sésamo", "Sulfitos", "Altramuces", "Moluscos"];
+const AllergenSelector: React.FC<{ selected: string[], onChange: (allergens: string[]) => void }> = ({ selected, onChange }) => {
+    return (
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-4">
+            {ALLERGENS_LIST.map(allergen => {
+                const Icon = ALLERGEN_ICONS[allergen] || AlertTriangle;
+                const isSelected = selected.includes(allergen);
+                return (
+                    <button
+                        key={allergen}
+                        type="button"
+                        onClick={() => onChange(isSelected ? selected.filter(a => a !== allergen) : [...selected, allergen])}
+                        className={`flex flex-col items-center p-2 rounded-lg border-2 ${isSelected ? 'bg-primary-100 border-primary-500' : 'bg-gray-50 border-gray-200'}`}
+                    >
+                        <Icon className="w-8 h-8 mb-1" />
+                        <span className="text-xs text-center">{allergen}</span>
+                    </button>
+                );
+            })}
+        </div>
+    );
+};
 
 const LabelPreviewModal: React.FC<{ recipe: Recipe, company: any, onClose: () => void }> = ({ recipe, company, onClose }) => {
     const { products } = useData();
@@ -20,8 +42,9 @@ const LabelPreviewModal: React.FC<{ recipe: Recipe, company: any, onClose: () =>
             const product = productsMap.get(ing.product_id);
             product?.allergens.forEach(a => allergens.add(a));
         });
+        recipe.selected_allergens?.forEach(a => allergens.add(a));
         return Array.from(allergens);
-    }, [recipe.ingredients, productsMap]);
+    }, [recipe.ingredients, recipe.selected_allergens, productsMap]);
 
     const printLabel = () => {
         const printWindow = window.open('', '_blank');
@@ -99,6 +122,7 @@ export const RecipeForm: React.FC = () => {
         service_type: '',
         client_description: '',
         service_time: '',
+        selected_allergens: [],
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [showLabelPreview, setShowLabelPreview] = useState(false);
@@ -375,7 +399,14 @@ export const RecipeForm: React.FC = () => {
                                     <input type="number" step="0.01" placeholder="Precio" value={formState.price} onChange={handleFormChange} name="price" required className="w-full mt-1 p-2 border rounded"/>
                                 </div>
                                 <div className="border-t pt-4">
-                                    <h4 className="font-semibold mb-2">Alérgenos Detectados</h4>
+                                    <h4 className="font-semibold mb-2">Seleccionar Alérgenos</h4>
+                                    <AllergenSelector 
+                                        selected={formState.selected_allergens || []} 
+                                        onChange={(allergens) => setFormState({...formState, selected_allergens: allergens})} 
+                                    />
+                                </div>
+                                <div className="border-t pt-4">
+                                    <h4 className="font-semibold mb-2">Alérgenos Detectados (Ingredientes)</h4>
                                     {allAllergens.length > 0 ? (
                                         <div className="flex flex-wrap gap-2">
                                             {allAllergens.map(a => <span key={a} className="bg-yellow-200 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">{a}</span>)}
