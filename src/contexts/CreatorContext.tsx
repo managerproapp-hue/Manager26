@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { Creator } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface CreatorContextType {
   creatorInfo: Creator;
-  setCreatorInfo: (info: Creator) => void;
+  setCreatorInfo: (info: Creator) => Promise<void>;
 }
 
 const CreatorContext = createContext<CreatorContextType | undefined>(undefined);
@@ -18,9 +19,35 @@ const initialCreatorInfo: Creator = {
 };
 
 export const CreatorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [creatorInfo, setCreatorInfo] = useLocalStorage<Creator>('creator:info', initialCreatorInfo);
+  const [creatorInfo, setCreatorInfoState] = useState<Creator>(initialCreatorInfo);
   
-  const value = useMemo(() => ({ creatorInfo, setCreatorInfo }), [creatorInfo, setCreatorInfo]);
+  useEffect(() => {
+    const docRef = doc(db, 'settings', 'creator');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setCreatorInfoState(docSnap.data() as Creator);
+      } else {
+        // Initialize if it doesn't exist
+        setDoc(docRef, initialCreatorInfo, { merge: true }).catch(console.error);
+      }
+    }, (error) => {
+      console.error("Error fetching creator info:", error);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const setCreatorInfo = async (info: Creator) => {
+    try {
+      // Optimistic update
+      setCreatorInfoState(info);
+      await setDoc(doc(db, 'settings', 'creator'), info, { merge: true });
+    } catch (error) {
+      console.error("Error updating creator info:", error);
+    }
+  };
+
+  const value = useMemo(() => ({ creatorInfo, setCreatorInfo }), [creatorInfo]);
 
   return <CreatorContext.Provider value={value}>{children}</CreatorContext.Provider>;
 };

@@ -38,6 +38,11 @@ service cloud.firestore {
     // Collection Rules
     // ===============================================================
 
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isAdmin() || isOwner(userId);

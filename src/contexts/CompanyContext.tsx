@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { Company } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface CompanyContextType {
   companyInfo: Company;
-  setCompanyInfo: (info: Company) => void;
+  setCompanyInfo: (info: Company) => Promise<void>;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -22,9 +23,35 @@ const initialCompanyInfo: Company = {
 };
 
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [companyInfo, setCompanyInfo] = useLocalStorage<Company>('company:info', initialCompanyInfo);
+  const [companyInfo, setCompanyInfoState] = useState<Company>(initialCompanyInfo);
 
-  const value = useMemo(() => ({ companyInfo, setCompanyInfo }), [companyInfo, setCompanyInfo]);
+  useEffect(() => {
+    const docRef = doc(db, 'settings', 'company');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setCompanyInfoState(docSnap.data() as Company);
+      } else {
+        // Initialize if it doesn't exist
+        setDoc(docRef, initialCompanyInfo, { merge: true }).catch(console.error);
+      }
+    }, (error) => {
+      console.error("Error fetching company info:", error);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const setCompanyInfo = async (info: Company) => {
+    try {
+      // Optimistic update
+      setCompanyInfoState(info);
+      await setDoc(doc(db, 'settings', 'company'), info, { merge: true });
+    } catch (error) {
+      console.error("Error updating company info:", error);
+    }
+  };
+
+  const value = useMemo(() => ({ companyInfo, setCompanyInfo }), [companyInfo]);
 
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>;
 };
