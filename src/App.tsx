@@ -47,6 +47,7 @@ import { OrderForm } from './pages/teacher/OrderForm';
 import { TeacherOrderHistory } from './pages/teacher/TeacherOrderHistory';
 import { SalesManager } from './pages/teacher/SalesManager';
 import { TakeawaySales } from './pages/teacher/TakeawaySales';
+import { ReservationManager } from './pages/teacher/ReservationManager';
 import { RecipeManager } from './pages/teacher/RecipeManager';
 import { RecipeForm } from './pages/teacher/RecipeForm';
 import { ServiceViewer } from './pages/teacher/ServiceViewer';
@@ -55,6 +56,7 @@ import { ClassroomList } from './pages/teacher/classroom/ClassroomList';
 
 import { StudentLayout } from './pages/layouts/StudentLayout';
 import { StudentDashboard } from './pages/student/StudentDashboard';
+import { TakeawayCatalog } from './pages/student/TakeawayCatalog';
 
 import { Profile } from './types';
 import { useAuth } from './contexts/AuthContext';
@@ -153,6 +155,7 @@ const AppContent: React.FC = () => {
               <Route path="order-history" element={<TeacherOrderHistory />} />
               <Route path="sales" element={<SalesManager />} />
               <Route path="takeaway-sales" element={<TakeawaySales />} />
+              <Route path="reservations" element={<ReservationManager />} />
               <Route path="recipes" element={<RecipeManager />} />
               <Route path="recipes/new" element={<RecipeForm />} />
               <Route path="recipes/edit/:recipeId" element={<RecipeForm />} />
@@ -166,6 +169,7 @@ const AppContent: React.FC = () => {
         <Route element={<ProtectedRoute allowedProfiles={[Profile.STUDENT]} />}>
           <Route path="/student" element={<StudentLayout />}>
               <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="takeaway-catalog" element={<TakeawayCatalog />} />
               <Route path="teacher-dashboard" element={<TeacherDashboard />} />
               <Route path="order-portal" element={<OrderPortal />} />
               <Route path="order-portal/new/:eventId" element={<OrderForm />} />
