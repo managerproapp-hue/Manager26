@@ -11,7 +11,7 @@ type EditTarget = { type: 'cycle'; item: TrainingCycle } | { type: 'module'; ite
 export const AssignmentManager: React.FC = () => {
     const { 
         assignments, setAssignments, users, 
-        groups, setGroups, modules, setModules, trainingCycles, setTrainingCycles 
+        groups, setGroups, modules, setModules, training_cycles, setTrainingCycles 
     } = useData();
     
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,28 +23,28 @@ export const AssignmentManager: React.FC = () => {
     const teachers = useMemo(() => users.filter(u => u.profiles.includes(Profile.TEACHER) && !SUPER_USER_EMAILS.includes(u.email)), [users]);
 
     const assignmentsMap = useMemo(() => {
-        const map = new Map<string, string>(); // groupId -> userId
-        assignments.forEach(a => map.set(a.groupId, a.userId));
+        const map = new Map<string, string>(); // group_id -> user_id
+        assignments.forEach(a => map.set(a.group_id, a.user_id));
         return map;
     }, [assignments]);
 
-    const handleAssignmentChange = (groupId: string, userId: string) => {
-        const existingAssignment = assignments.find(a => a.groupId === groupId);
-        if (userId === "") { // Unassigning
-            if (existingAssignment) setAssignments(assignments.filter(a => a.groupId !== groupId));
+    const handleAssignmentChange = (group_id: string, user_id: string) => {
+        const existingAssignment = assignments.find(a => a.group_id === group_id);
+        if (user_id === "") { // Unassigning
+            if (existingAssignment) setAssignments(assignments.filter(a => a.group_id !== group_id));
         } else { // Assigning or changing
             if (existingAssignment) {
-                setAssignments(assignments.map(a => a.groupId === groupId ? { ...a, userId } : a));
+                setAssignments(assignments.map(a => a.group_id === group_id ? { ...a, user_id } : a));
             } else {
-                setAssignments([...assignments, { id: `asg-${Date.now()}`, groupId, userId }]);
+                setAssignments([...assignments, { id: `asg-${Date.now()}`, group_id, user_id }]);
             }
         }
     };
     
     const openModalForNew = (type: 'cycle' | 'module' | 'group', parentId?: string) => {
         if (type === 'cycle') setNewCycle({});
-        if (type === 'module') setNewModule({ cycleId: parentId });
-        if (type === 'group') setNewGroup({ moduleId: parentId });
+        if (type === 'module') setNewModule({ cycle_id: parentId });
+        if (type === 'group') setNewGroup({ module_id: parentId });
         setIsModalOpen(true);
     };
     
@@ -63,13 +63,13 @@ export const AssignmentManager: React.FC = () => {
     
     const handleSave = (name: string) => {
         if (editTarget) { // Editing
-            if(editTarget.type === 'cycle') setTrainingCycles(trainingCycles.map(c => c.id === editTarget.item.id ? {...c, name} : c));
+            if(editTarget.type === 'cycle') setTrainingCycles(training_cycles.map(c => c.id === editTarget.item.id ? {...c, name} : c));
             if(editTarget.type === 'module') setModules(modules.map(m => m.id === editTarget.item.id ? {...m, name} : m));
             if(editTarget.type === 'group') setGroups(groups.map(g => g.id === editTarget.item.id ? {...g, name} : g));
         } else { // Creating
-            if(newCycle) setTrainingCycles([...trainingCycles, {id: `cycle-${Date.now()}`, name}]);
-            if(newModule) setModules([...modules, {id: `mod-${Date.now()}`, name, cycleId: newModule.cycleId!}]);
-            if(newGroup) setGroups([...groups, {id: `grp-${Date.now()}`, name, moduleId: newGroup.moduleId!}]);
+            if(newCycle) setTrainingCycles([...training_cycles, {id: `cycle-${Date.now()}`, name}]);
+            if(newModule) setModules([...modules, {id: `mod-${Date.now()}`, name, cycle_id: newModule.cycle_id!}]);
+            if(newGroup) setGroups([...groups, {id: `grp-${Date.now()}`, name, module_id: newGroup.module_id!}]);
         }
         handleCloseModal();
     };
@@ -78,21 +78,21 @@ export const AssignmentManager: React.FC = () => {
         if (!window.confirm(`¿Seguro que quieres eliminar "${item.name}"? Esto eliminará todos los elementos que contiene.`)) return;
 
         if (type === 'cycle') {
-            const moduleIdsToDelete = modules.filter(m => m.cycleId === item.id).map(m => m.id);
-            const groupIdsToDelete = groups.filter(g => moduleIdsToDelete.includes(g.moduleId)).map(g => g.id);
-            setModules(modules.filter(m => m.cycleId !== item.id));
-            setGroups(groups.filter(g => !moduleIdsToDelete.includes(g.moduleId)));
-            setAssignments(assignments.filter(a => !groupIdsToDelete.includes(a.groupId)));
-            setTrainingCycles(trainingCycles.filter(c => c.id !== item.id));
+            const moduleIdsToDelete = modules.filter(m => m.cycle_id === item.id).map(m => m.id);
+            const groupIdsToDelete = groups.filter(g => moduleIdsToDelete.includes(g.module_id)).map(g => g.id);
+            setModules(modules.filter(m => m.cycle_id !== item.id));
+            setGroups(groups.filter(g => !moduleIdsToDelete.includes(g.module_id)));
+            setAssignments(assignments.filter(a => !groupIdsToDelete.includes(a.group_id)));
+            setTrainingCycles(training_cycles.filter(c => c.id !== item.id));
         }
         if (type === 'module') {
-            const groupIdsToDelete = groups.filter(g => g.moduleId === item.id).map(g => g.id);
-            setGroups(groups.filter(g => g.moduleId !== item.id));
-            setAssignments(assignments.filter(a => !groupIdsToDelete.includes(a.groupId)));
+            const groupIdsToDelete = groups.filter(g => g.module_id === item.id).map(g => g.id);
+            setGroups(groups.filter(g => g.module_id !== item.id));
+            setAssignments(assignments.filter(a => !groupIdsToDelete.includes(a.group_id)));
             setModules(modules.filter(m => m.id !== item.id));
         }
         if (type === 'group') {
-            setAssignments(assignments.filter(a => a.groupId !== item.id));
+            setAssignments(assignments.filter(a => a.group_id !== item.id));
             setGroups(groups.filter(g => g.id !== item.id));
         }
     };
@@ -112,7 +112,7 @@ export const AssignmentManager: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-                {trainingCycles.map(cycle => (
+                {training_cycles.map(cycle => (
                     <Card key={cycle.id} title={
                         <div className="flex justify-between items-center w-full">
                            <span className="text-2xl">{cycle.name}</span>
@@ -123,7 +123,7 @@ export const AssignmentManager: React.FC = () => {
                         </div>
                     }>
                         <div className="space-y-4 pl-4 border-l-2 border-gray-200 dark:border-gray-600">
-                            {modules.filter(m => m.cycleId === cycle.id).map(module => (
+                            {modules.filter(m => m.cycle_id === cycle.id).map(module => (
                                 <div key={module.id}>
                                     <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 rounded-t-md">
                                         <h4 className="font-semibold text-lg">{module.name}</h4>
@@ -135,7 +135,7 @@ export const AssignmentManager: React.FC = () => {
                                     </div>
                                     <table className="w-full">
                                         <tbody>
-                                        {groups.filter(g => g.moduleId === module.id).map((group, index) => (
+                                        {groups.filter(g => g.module_id === module.id).map((group, index) => (
                                             <tr key={group.id} className={`${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'}`}>
                                                 <td className="p-2 w-full">{group.name}</td>
                                                 <td className="p-2">

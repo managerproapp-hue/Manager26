@@ -47,20 +47,20 @@ export const Support: React.FC = () => {
             events: data.events,
             orders: data.orders,
             incidents: data.incidents,
-            trainingCycles: data.trainingCycles,
+            training_cycles: data.training_cycles,
             modules: data.modules,
             groups: data.groups,
             assignments: data.assignments,
             recipes: data.recipes,
             sales: data.sales,
-            miniEconomatoStock: data.miniEconomatoStock,
+            mini_economato_stock: data.mini_economato_stock,
             messages: data.messages,
             classrooms: data.classrooms,
-            classroomProducts: data.classroomProducts,
-            classroomSuppliers: data.classroomSuppliers,
-            classroomEvents: data.classroomEvents,
-            classroomOrders: data.classroomOrders,
-            serviceGroups: data.serviceGroups,
+            classroom_products: data.classroom_products,
+            classroom_suppliers: data.classroom_suppliers,
+            classroom_events: data.classroom_events,
+            classroom_orders: data.classroom_orders,
+            service_groups: data.service_groups,
             services: data.services,
         };
         const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(backupData, null, 2))}`;
@@ -101,20 +101,20 @@ export const Support: React.FC = () => {
                         data.setEvents(restoredData.events || []);
                         data.setOrders(restoredData.orders || []);
                         data.setIncidents(restoredData.incidents || []);
-                        data.setTrainingCycles(restoredData.trainingCycles || []);
+                        data.setTrainingCycles(restoredData.training_cycles || []);
                         data.setModules(restoredData.modules || []);
                         data.setGroups(restoredData.groups || []);
                         data.setAssignments(restoredData.assignments || []);
                         data.setRecipes(restoredData.recipes || []);
                         data.setSales(restoredData.sales || []);
-                        data.setMiniEconomatoStock(restoredData.miniEconomatoStock || []);
+                        data.setMiniEconomatoStock(restoredData.mini_economato_stock || []);
                         data.setMessages(restoredData.messages || []);
                         data.setClassrooms(restoredData.classrooms || []);
-                        data.setClassroomProducts(restoredData.classroomProducts || []);
-                        data.setClassroomSuppliers(restoredData.classroomSuppliers || []);
-                        data.setClassroomEvents(restoredData.classroomEvents || []);
-                        data.setClassroomOrders(restoredData.classroomOrders || []);
-                        data.setServiceGroups(restoredData.serviceGroups || []);
+                        data.setClassroomProducts(restoredData.classroom_products || []);
+                        data.setClassroomSuppliers(restoredData.classroom_suppliers || []);
+                        data.setClassroomEvents(restoredData.classroom_events || []);
+                        data.setClassroomOrders(restoredData.classroom_orders || []);
+                        data.setServiceGroups(restoredData.service_groups || []);
                         data.setServices(restoredData.services || []);
                         
                         setTimeout(() => {
@@ -184,7 +184,7 @@ export const Support: React.FC = () => {
                 </Card>
                 <Card title="Propiedad Intelectual y Licencia" icon={<ShieldCheckIcon className="w-8 h-8" />} className="md:col-span-2">
                     <div className="space-y-4 text-sm">
-                        <p><strong>Aplicación:</strong> {creatorInfo.appName}</p>
+                        <p><strong>Aplicación:</strong> {creatorInfo.app_name}</p>
                         <p><strong>Titular:</strong> {creatorInfo.name}</p>
                         <p><strong>Copyright:</strong> {creatorInfo.copyright}</p>
                         <div className="pt-4 border-t dark:border-gray-600">

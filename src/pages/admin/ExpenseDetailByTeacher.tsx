@@ -8,18 +8,18 @@ import { printPage, exportToCsv } from '../../utils/export';
 const formatCurrency = (amount: number) => amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 
 export const ExpenseDetailByTeacher: React.FC = () => {
-    const { teacherId } = useParams<{ teacherId: string }>();
+    const { teacher_id } = useParams<{ teacher_id: string }>();
     const { users, orders, sales, products, events } = useData();
 
-    const teacher = useMemo(() => users.find(u => u.id === teacherId), [users, teacherId]);
+    const teacher = useMemo(() => users.find(u => u.id === teacher_id), [users, teacher_id]);
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p.name])), [products]);
     const eventsMap = useMemo(() => new Map(events.map(e => [e.id, e.name])), [events]);
 
     const teacherData = useMemo(() => {
         if (!teacher) return null;
 
-        const teacherOrders = orders.filter(o => o.userId === teacher.id && o.status === 'Completado');
-        const teacherSales = sales.filter(s => s.teacherId === teacher.id);
+        const teacherOrders = orders.filter(o => o.user_id === teacher.id && o.status === 'Completado');
+        const teacherSales = sales.filter(s => s.teacher_id === teacher.id);
 
         const totalSpend = teacherOrders.reduce((sum, o) => sum + (o.cost || 0), 0);
         const totalSales = teacherSales.reduce((sum, s) => sum + s.amount, 0);
@@ -96,7 +96,7 @@ export const ExpenseDetailByTeacher: React.FC = () => {
                         <thead><tr className="border-b dark:border-gray-600 text-left"><th className="p-2">Fecha</th><th className="p-2">Evento</th><th className="p-2">Coste</th></tr></thead>
                         <tbody>
                             {/* FIX: Add fallback for eventsMap.get to prevent undefined being passed as a child. */}
-                            {teacherData.teacherOrders.map(o => <tr key={o.id}><td className="p-2">{new Date(o.date).toLocaleDateString()}</td><td className="p-2">{eventsMap.get(o.eventId) || 'N/A'}</td><td className="p-2">{formatCurrency(o.cost || 0)}</td></tr>)}
+                            {teacherData.teacherOrders.map(o => <tr key={o.id}><td className="p-2">{new Date(o.date).toLocaleDateString()}</td><td className="p-2">{eventsMap.get(o.event_id) || 'N/A'}</td><td className="p-2">{formatCurrency(o.cost || 0)}</td></tr>)}
                         </tbody>
                     </table>
                  </Card>

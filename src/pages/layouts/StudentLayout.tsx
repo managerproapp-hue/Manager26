@@ -19,16 +19,16 @@ import { PrintFooter } from '../../components/PrintFooter';
 const SandboxedDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const globalData = useData();
     const { currentUser } = useAuth();
-    const classroomId = currentUser?.classroomId;
+    const classroomId = currentUser?.classroom_id;
     
     // FIX: Correctly type the sandboxed data state and setter.
-    const [sandboxedData, setSandboxedData] = useLocalStorage<Pick<AppData, 'products' | 'suppliers' | 'orders' | 'events' | 'incidents' | 'miniEconomatoStock'>>(`classroom-data-${classroomId}`, {
+    const [sandboxedData, setSandboxedData] = useLocalStorage<Pick<AppData, 'products' | 'suppliers' | 'orders' | 'events' | 'incidents' | 'mini_economato_stock'>>(`classroom-data-${classroomId}`, {
         products: [],
         suppliers: [],
         orders: [],
         events: [],
         incidents: [],
-        miniEconomatoStock: [],
+        mini_economato_stock: [],
     });
 
     // FIX: Provide a fully-typed DataContext value, overriding global data with sandboxed data and setters.
@@ -40,7 +40,7 @@ const SandboxedDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       orders: sandboxedData.orders,
       events: sandboxedData.events,
       incidents: sandboxedData.incidents,
-      miniEconomatoStock: sandboxedData.miniEconomatoStock,
+      mini_economato_stock: sandboxedData.mini_economato_stock,
 
       // Override setters to update sandboxed data
       // FIX: Ensure setters correctly handle functional updates.
@@ -49,7 +49,7 @@ const SandboxedDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setOrders: (orders) => setSandboxedData(prev => ({ ...prev, orders: typeof orders === 'function' ? orders(prev.orders) : orders })),
       setEvents: (events) => setSandboxedData(prev => ({ ...prev, events: typeof events === 'function' ? events(prev.events) : events })),
       setIncidents: (incidents) => setSandboxedData(prev => ({...prev, incidents: typeof incidents === 'function' ? incidents(prev.incidents) : incidents })),
-      setMiniEconomatoStock: (stock) => setSandboxedData(prev => ({...prev, miniEconomatoStock: typeof stock === 'function' ? stock(prev.miniEconomatoStock) : stock})),
+      setMiniEconomatoStock: (stock) => setSandboxedData(prev => ({...prev, mini_economato_stock: typeof stock === 'function' ? stock(prev.mini_economato_stock) : stock})),
       // FIX: Provide dummy setters for data not sandboxed in this context.
       setServiceGroups: (serviceGroups: React.SetStateAction<ServiceGroup[]>) => {},
       setServices: (services: React.SetStateAction<Service[]>) => {},
@@ -65,7 +65,7 @@ export const StudentLayout: React.FC = () => {
   const { setPrimaryColor } = useTheme();
   const { companyInfo } = useCompany();
   const { users } = useData(); // Use global data for users
-  const managerUser = users.find(u => u.id === companyInfo.managerUserId);
+  const managerUser = users.find(u => u.id === companyInfo.manager_user_id);
 
   useEffect(() => {
     setPrimaryColor('#16a34a'); // Green for classroom

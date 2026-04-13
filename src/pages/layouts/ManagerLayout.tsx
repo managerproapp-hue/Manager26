@@ -14,7 +14,7 @@ export const ManagerLayout: React.FC = () => {
   const { isImpersonating } = useAuth();
   const { companyInfo } = useCompany();
   const { users } = useData();
-  const managerUser = users.find(u => u.id === companyInfo.managerUserId);
+  const managerUser = users.find(u => u.id === companyInfo.manager_user_id);
   
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">

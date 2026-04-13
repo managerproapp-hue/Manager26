@@ -3,7 +3,7 @@ import { useCreator } from '../contexts/CreatorContext';
 
 export const PrintFooter: React.FC = () => {
   const { creatorInfo } = useCreator();
-  const appName = creatorInfo.appName || 'Manager Pro';
+  const appName = creatorInfo.app_name || 'Manager Pro';
   const dateTime = new Date().toLocaleString();
 
   return (

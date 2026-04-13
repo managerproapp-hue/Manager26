@@ -16,7 +16,7 @@ const LabelPreviewModal: React.FC<{ recipe: Recipe, company: any, onClose: () =>
     const allAllergens = useMemo(() => {
         const allergens = new Set<string>();
         recipe.ingredients.forEach(ing => {
-            const product = productsMap.get(ing.productId);
+            const product = productsMap.get(ing.product_id);
             product?.allergens.forEach(a => allergens.add(a));
         });
         return Array.from(allergens);
@@ -53,7 +53,7 @@ const LabelPreviewModal: React.FC<{ recipe: Recipe, company: any, onClose: () =>
         <Modal isOpen={true} onClose={onClose} title="Previsualización de Etiqueta" size="sm">
             <div id="label-content" className="w-full max-w-sm mx-auto border-2 border-black p-3 space-y-2 text-xs bg-white text-black">
                 <div className="flex items-center space-x-3 border-b border-black pb-2">
-                    <img src={company.printLogo} alt="Logo" className="h-10 w-auto" />
+                    <img src={company.print_logo} alt="Logo" className="h-10 w-auto" />
                     <h1 className="font-bold text-sm">{company.name}</h1>
                 </div>
                 <div>
@@ -63,7 +63,7 @@ const LabelPreviewModal: React.FC<{ recipe: Recipe, company: any, onClose: () =>
                     <p><span className="font-bold">Fecha de elaboración:</span> {new Date().toLocaleDateString()}</p>
                 </div>
                 <div className="border-t border-black pt-1">
-                    <p><span className="font-bold">Ingredientes:</span> {recipe.ingredients.map(i => productsMap.get(i.productId)?.name).join(', ')}.</p>
+                    <p><span className="font-bold">Ingredientes:</span> {recipe.ingredients.map(i => productsMap.get(i.product_id)?.name).join(', ')}.</p>
                 </div>
                 {allAllergens.length > 0 && (
                      <div className="border-t border-black pt-1">
@@ -86,16 +86,16 @@ export const RecipeForm: React.FC = () => {
     const { currentUser } = useAuth();
     const { companyInfo } = useCompany();
 
-    const [formState, setFormState] = useState<Omit<Recipe, 'id' | 'authorId'>>({
-        name: '', description: '', photo: '', yieldAmount: 1, yieldUnit: 'raciones', category: '',
-        ingredients: [], preparationSteps: '', keyPoints: '', isPublic: false, cost: 0, price: 0,
-        customSection: { title: '', content: '' },
+    const [formState, setFormState] = useState<Omit<Recipe, 'id' | 'author_id'>>({
+        name: '', description: '', photo: '', yield_amount: 1, yield_unit: 'raciones', category: '',
+        ingredients: [], preparation_steps: '', key_points: '', is_public: false, cost: 0, price: 0,
+        custom_section: { title: '', content: '' },
         presentation: '',
         temperature: 'Caliente',
-        recommendedMarking: '',
-        serviceType: '',
-        clientDescription: '',
-        serviceTime: '',
+        recommended_marking: '',
+        service_type: '',
+        client_description: '',
+        service_time: '',
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [showLabelPreview, setShowLabelPreview] = useState(false);
@@ -118,10 +118,10 @@ export const RecipeForm: React.FC = () => {
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
-        if (name === 'customSectionTitle') {
-            setFormState(prev => ({ ...prev, customSection: { ...prev.customSection!, title: value } }));
-        } else if (name === 'customSectionContent') {
-            setFormState(prev => ({ ...prev, customSection: { ...prev.customSection!, content: value } }));
+        if (name === 'custom_section_title') {
+            setFormState(prev => ({ ...prev, custom_section: { ...prev.custom_section!, title: value } }));
+        } else if (name === 'custom_section_content') {
+            setFormState(prev => ({ ...prev, custom_section: { ...prev.custom_section!, content: value } }));
         } else {
             setFormState(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
         }
@@ -136,8 +136,8 @@ export const RecipeForm: React.FC = () => {
     };
     
     const addIngredient = (product: Product) => {
-        if (!formState.ingredients.some(i => i.productId === product.id)) {
-            const newIngredient: RecipeIngredient = { productId: product.id, quantity: 1, unit: product.unit };
+        if (!formState.ingredients.some(i => i.product_id === product.id)) {
+            const newIngredient: RecipeIngredient = { product_id: product.id, quantity: 1, unit: product.unit };
             setFormState(prev => ({...prev, ingredients: [...prev.ingredients, newIngredient]}));
         }
         setSearchTerm('');
@@ -155,18 +155,18 @@ export const RecipeForm: React.FC = () => {
     
     const calculatedCost = useMemo(() => {
         return formState.ingredients.reduce((total, ing) => {
-            const product = productsMap.get(ing.productId);
+            const product = productsMap.get(ing.product_id);
             const price = product?.suppliers.sort((a,b) => a.price - b.price)[0]?.price || 0;
             return total + (price * ing.quantity);
         }, 0);
     }, [formState.ingredients, productsMap]);
 
-    const costPerServing = (calculatedCost / (formState.yieldAmount || 1));
+    const costPerServing = (calculatedCost / (formState.yield_amount || 1));
 
     const allAllergens = useMemo(() => {
         const allergens = new Set<string>();
         formState.ingredients.forEach(ing => {
-            const product = productsMap.get(ing.productId);
+            const product = productsMap.get(ing.product_id);
             product?.allergens.forEach(a => allergens.add(a));
         });
         return Array.from(allergens);
@@ -178,7 +178,7 @@ export const RecipeForm: React.FC = () => {
         
         const recipeToSave: Recipe = {
             id: recipeId || `rec-${Date.now()}`,
-            authorId: currentUser.id,
+            author_id: currentUser.id,
             ...formState,
             cost: calculatedCost
         };
@@ -210,8 +210,8 @@ export const RecipeForm: React.FC = () => {
                                 <div className="md:w-2/3 space-y-4">
                                     <input type="text" placeholder="Nombre de la Ficha" value={formState.name} onChange={handleFormChange} name="name" required className="w-full text-xl font-bold p-2 border-b-2"/>
                                     <div className="flex gap-4">
-                                        <input type="number" placeholder="Raciones" value={formState.yieldAmount} onChange={handleFormChange} name="yieldAmount" min="1" className="w-1/3 p-2 border rounded"/>
-                                        <input type="text" placeholder="Unidad" value={formState.yieldUnit} onChange={handleFormChange} name="yieldUnit" className="w-1/3 p-2 border rounded"/>
+                                        <input type="number" placeholder="Raciones" value={formState.yield_amount} onChange={handleFormChange} name="yield_amount" min="1" className="w-1/3 p-2 border rounded"/>
+                                        <input type="text" placeholder="Unidad" value={formState.yield_unit} onChange={handleFormChange} name="yield_unit" className="w-1/3 p-2 border rounded"/>
                                         <input type="text" placeholder="Categoría" value={formState.category} onChange={handleFormChange} name="category" className="w-1/3 p-2 border rounded"/>
                                     </div>
                                     <textarea placeholder="Descripción corta" value={formState.description} onChange={handleFormChange} name="description" rows={2} className="w-full p-2 border rounded" />
@@ -231,8 +231,8 @@ export const RecipeForm: React.FC = () => {
                             </div>
                             <div className="space-y-2 max-h-60 overflow-y-auto">
                                 {formState.ingredients.map((ing, index) => (
-                                    <div key={ing.productId} className="grid grid-cols-12 gap-2 items-center">
-                                        <span className="col-span-6">{productsMap.get(ing.productId)?.name}</span>
+                                    <div key={ing.product_id} className="grid grid-cols-12 gap-2 items-center">
+                                        <span className="col-span-6">{productsMap.get(ing.product_id)?.name}</span>
                                         {/* FIX: Add step attribute to allow decimal quantities. */}
                                         <input type="number" step="0.01" value={ing.quantity} onChange={e => handleIngredientChange(index, 'quantity', parseFloat(e.target.value))} className="col-span-2 p-1 border rounded dark:bg-gray-700"/>
                                         <input type="text" value={ing.unit} onChange={e => handleIngredientChange(index, 'unit', e.target.value)} className="col-span-2 p-1 border rounded dark:bg-gray-700"/>
@@ -243,7 +243,7 @@ export const RecipeForm: React.FC = () => {
                         </Card>
 
                         <Card title="Elaboración">
-                            <textarea placeholder="Pasos detallados de la receta..." value={formState.preparationSteps} onChange={handleFormChange} name="preparationSteps" rows={10} required className="w-full p-2 border rounded" />
+                            <textarea placeholder="Pasos detallados de la receta..." value={formState.preparation_steps} onChange={handleFormChange} name="preparation_steps" rows={10} required className="w-full p-2 border rounded" />
                         </Card>
                         
                         <Card title="Instrucciones de Servicio">
@@ -262,29 +262,29 @@ export const RecipeForm: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium">Marcaje Recomendado</label>
-                                    <input type="text" name="recommendedMarking" value={formState.recommendedMarking || ''} onChange={handleFormChange} className="mt-1 block w-full p-2 border rounded" />
+                                    <input type="text" name="recommended_marking" value={formState.recommended_marking || ''} onChange={handleFormChange} className="mt-1 block w-full p-2 border rounded" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium">Tiempo de Pase</label>
-                                    <input type="text" name="serviceTime" value={formState.serviceTime || ''} placeholder="Ej: 5 min" onChange={handleFormChange} className="mt-1 block w-full p-2 border rounded" />
+                                    <input type="text" name="service_time" value={formState.service_time || ''} placeholder="Ej: 5 min" onChange={handleFormChange} className="mt-1 block w-full p-2 border rounded" />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium">Tipo de Servicio</label>
-                                    <input type="text" name="serviceType" value={formState.serviceType || ''} placeholder="Inglesa, salseado, terminado en sala..." onChange={handleFormChange} className="mt-1 block w-full p-2 border rounded" />
+                                    <input type="text" name="service_type" value={formState.service_type || ''} placeholder="Inglesa, salseado, terminado en sala..." onChange={handleFormChange} className="mt-1 block w-full p-2 border rounded" />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium">Breve Descripción para el Cliente</label>
-                                    <textarea name="clientDescription" value={formState.clientDescription || ''} rows={3} onChange={handleFormChange} className="mt-1 block w-full p-2 border rounded" />
+                                    <textarea name="client_description" value={formState.client_description || ''} rows={3} onChange={handleFormChange} className="mt-1 block w-full p-2 border rounded" />
                                 </div>
                             </div>
                         </Card>
 
                         <Card title="Notas Importantes">
-                            <textarea placeholder="Advertencias, maridajes, conservación, etc." value={formState.keyPoints} onChange={handleFormChange} name="keyPoints" rows={3} className="w-full p-2 border rounded" />
+                            <textarea placeholder="Advertencias, maridajes, conservación, etc." value={formState.key_points} onChange={handleFormChange} name="key_points" rows={3} className="w-full p-2 border rounded" />
                         </Card>
 
-                        <Card title={<input type="text" value={formState.customSection?.title || ''} onChange={handleFormChange} name="customSectionTitle" placeholder="Título de Sección Personalizable" className="text-xl font-bold p-1 w-full"/>}>
-                             <textarea placeholder="Contenido de la sección personalizable..." value={formState.customSection?.content || ''} onChange={handleFormChange} name="customSectionContent" rows={3} className="w-full p-2 border rounded" />
+                        <Card title={<input type="text" value={formState.custom_section?.title || ''} onChange={handleFormChange} name="custom_section_title" placeholder="Título de Sección Personalizable" className="text-xl font-bold p-1 w-full"/>}>
+                             <textarea placeholder="Contenido de la sección personalizable..." value={formState.custom_section?.content || ''} onChange={handleFormChange} name="custom_section_content" rows={3} className="w-full p-2 border rounded" />
                         </Card>
                     </div>
 
@@ -318,7 +318,7 @@ export const RecipeForm: React.FC = () => {
                         <Card title="Acciones">
                             <div className="space-y-3">
                                 <label className="flex items-center">
-                                    <input type="checkbox" checked={formState.isPublic} onChange={e => setFormState({...formState, isPublic: e.target.checked})} className="h-4 w-4 rounded" />
+                                    <input type="checkbox" checked={formState.is_public} onChange={e => setFormState({...formState, is_public: e.target.checked})} className="h-4 w-4 rounded" />
                                     <span className="ml-2 text-sm">Hacer ficha pública para otros profesores</span>
                                 </label>
                                 <button type="submit" className="w-full bg-primary-600 text-white py-3 rounded-md hover:bg-primary-700 font-bold">Guardar Ficha</button>

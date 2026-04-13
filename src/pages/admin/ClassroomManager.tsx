@@ -12,11 +12,11 @@ const ClassroomFormModal: React.FC<{
     onSave: (classroomData: Partial<Classroom>) => void;
 }> = ({ classroom, teachers, onClose, onSave }) => {
     const [name, setName] = useState(classroom?.name || '');
-    const [tutorId, setTutorId] = useState(classroom?.tutorId || '');
+    const [tutor_id, setTutorId] = useState(classroom?.tutor_id || '');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, tutorId });
+        onSave({ name, tutor_id });
     };
 
     return (
@@ -36,7 +36,7 @@ const ClassroomFormModal: React.FC<{
                 <div>
                     <label className="block text-sm font-medium">Asignar Profesor Tutor</label>
                     <select
-                        value={tutorId}
+                        value={tutor_id}
                         onChange={(e) => setTutorId(e.target.value)}
                         className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700"
                         required
@@ -69,8 +69,8 @@ export const ClassroomManager: React.FC = () => {
     const studentCountByClassroom = useMemo(() => {
         const counts = new Map<string, number>();
         users.forEach(user => {
-            if(user.classroomId) {
-                counts.set(user.classroomId, (counts.get(user.classroomId) || 0) + 1);
+            if(user.classroom_id) {
+                counts.set(user.classroom_id, (counts.get(user.classroom_id) || 0) + 1);
             }
         });
         return counts;
@@ -88,7 +88,7 @@ export const ClassroomManager: React.FC = () => {
             const newClassroom: Classroom = {
                 id: `cls-${Date.now()}`,
                 name: classroomData.name!,
-                tutorId: classroomData.tutorId!,
+                tutor_id: classroomData.tutor_id!,
             };
             setClassrooms([...classrooms, newClassroom]);
         }
@@ -97,10 +97,10 @@ export const ClassroomManager: React.FC = () => {
 
     const handleDeleteClassroom = (classroomId: string) => {
         if (window.confirm("¿Seguro que quieres eliminar esta aula? Los alumnos asignados quedarán sin clase y se borrarán todos los datos de práctica del aula. Esta acción es irreversible.")) {
-            // Unassign students by clearing their classroomId
+            // Unassign students by clearing their classroom_id
             setUsers(users.map(u => 
-                u.classroomId === classroomId 
-                ? { ...u, classroomId: undefined } 
+                u.classroom_id === classroomId 
+                ? { ...u, classroom_id: undefined } 
                 : u
             ));
 
@@ -136,7 +136,7 @@ export const ClassroomManager: React.FC = () => {
                             {classrooms.map(classroom => (
                                 <tr key={classroom.id} className="border-b dark:border-gray-700">
                                     <td className="px-4 py-2 font-medium">{classroom.name}</td>
-                                    <td className="px-4 py-2">{usersMap.get(classroom.tutorId)?.name || 'Sin Asignar'}</td>
+                                    <td className="px-4 py-2">{usersMap.get(classroom.tutor_id)?.name || 'Sin Asignar'}</td>
                                     <td className="px-4 py-2 text-center">{studentCountByClassroom.get(classroom.id) || 0}</td>
                                     <td className="px-4 py-2 space-x-2">
                                         <button onClick={() => handleOpenModal(classroom)} className="text-primary-600 p-1 inline-block"><PencilIcon className="w-4 h-4" /></button>

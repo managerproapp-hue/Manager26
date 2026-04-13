@@ -8,9 +8,9 @@ import { Classroom, User, Profile, getProfileDisplayName, AppData, Product, Supp
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 
 // --- DATA PROVIDER FOR SANDBOXED ENVIRONMENT ---
-const SandboxedClassroomProvider: React.FC<{ classroomId: string; children: React.ReactNode }> = ({ classroomId, children }) => {
+const SandboxedClassroomProvider: React.FC<{ classroom_id: string; children: React.ReactNode }> = ({ classroom_id, children }) => {
     const globalData = useData();
-    const dataKey = `classroom-data-${classroomId}`;
+    const dataKey = `classroom-data-${classroom_id}`;
 
     const [sandboxedData, setSandboxedData] = useLocalStorage<Pick<AppData, 'products' | 'suppliers' | 'orders' | 'events'>>(dataKey, {
         products: [],
@@ -40,9 +40,9 @@ const DashboardTab: React.FC<{ classroom: Classroom, setActiveTab: (tab: string)
     const { users } = useData(); // Global users
     const sandboxedData = useData(); // Sandboxed data
     
-    const studentCount = useMemo(() => users.filter(u => u.classroomId === classroom.id).length, [users, classroom.id]);
-    const activePractice = useMemo(() => sandboxedData.events.find(e => new Date(e.endDate) > new Date()), [sandboxedData.events]);
-    const submittedOrders = useMemo(() => activePractice ? sandboxedData.orders.filter(o => o.eventId === activePractice.id).length : 0, [sandboxedData.orders, activePractice]);
+    const studentCount = useMemo(() => users.filter(u => u.classroom_id === classroom.id).length, [users, classroom.id]);
+    const activePractice = useMemo(() => sandboxedData.events.find(e => new Date(e.end_date) > new Date()), [sandboxedData.events]);
+    const submittedOrders = useMemo(() => activePractice ? sandboxedData.orders.filter(o => o.event_id === activePractice.id).length : 0, [sandboxedData.orders, activePractice]);
 
     return (
         <div>
@@ -64,7 +64,7 @@ const DashboardTab: React.FC<{ classroom: Classroom, setActiveTab: (tab: string)
                 {activePractice ? (
                     <div>
                         <h3 className="font-bold">{activePractice.name}</h3>
-                        <p>Finaliza: {new Date(activePractice.endDate).toLocaleString()}</p>
+                        <p>Finaliza: {new Date(activePractice.end_date).toLocaleString()}</p>
                         <p>{submittedOrders} pedidos de alumnos enviados.</p>
                     </div>
                 ) : <p>No hay ninguna práctica activa en este momento.</p>}
@@ -86,7 +86,7 @@ const StudentManagerTab: React.FC<{ classroom: Classroom }> = ({ classroom }) =>
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
 
-    const students = useMemo(() => users.filter(u => u.classroomId === classroom.id), [users, classroom.id]);
+    const students = useMemo(() => users.filter(u => u.classroom_id === classroom.id), [users, classroom.id]);
     
     const handleOpenModal = (student: User | null = null) => {
         setSelectedStudent(student);
@@ -100,8 +100,8 @@ const StudentManagerTab: React.FC<{ classroom: Classroom }> = ({ classroom }) =>
             const newStudent: User = {
                 id: `student-${Date.now()}`, name: studentData.name || '', email: studentData.email || '',
                 password: studentData.password || 'password', avatar: `https://i.pravatar.cc/150?u=${studentData.email}`,
-                profiles: [Profile.STUDENT], activityStatus: 'Activo', locationStatus: 'En el centro',
-                classroomId: classroom.id, studentSimulatedProfile: studentData.studentSimulatedProfile,
+                profiles: [Profile.STUDENT], activity_status: 'Activo', location_status: 'En el centro',
+                classroom_id: classroom.id, student_simulated_profile: studentData.student_simulated_profile,
             };
             setUsers(prevUsers => [...prevUsers, newStudent]);
         }
@@ -128,7 +128,7 @@ const StudentManagerTab: React.FC<{ classroom: Classroom }> = ({ classroom }) =>
                         <tr key={student.id} className="border-t">
                             <td className="p-2">{student.name}</td>
                             <td className="p-2">{student.email}</td>
-                            <td className="p-2">{student.studentSimulatedProfile ? getProfileDisplayName(student.studentSimulatedProfile, 'student_simulation') : 'Sin Asignar'}</td>
+                            <td className="p-2">{student.student_simulated_profile ? getProfileDisplayName(student.student_simulated_profile, 'student_simulation') : 'Sin Asignar'}</td>
                             <td className="p-2 space-x-2">
                                 <button onClick={() => impersonateUser(student)} title="Suplantar" className="text-yellow-600 p-1 inline-block hover:scale-110 transition-transform"><SignatureIcon className="w-4 h-4"/></button>
                                 <button onClick={() => handleOpenModal(student)} title="Editar" className="text-blue-600 p-1 inline-block hover:scale-110 transition-transform"><PencilIcon className="w-4 h-4"/></button>
@@ -179,7 +179,7 @@ const CatalogManagerTab: React.FC<{ classroom: Classroom }> = ({ classroom }) =>
             setSuppliers(suppliers.map(s => s.id === selectedSupplier.id ? {...s, ...data} : s));
         } else {
             const newSupplier: Supplier = {
-                id: `csupp-${Date.now()}`, name: data.name!, cif: '', address: '', phone: '', email: '', contactPerson: '', status: 'Activo'
+                id: `csupp-${Date.now()}`, name: data.name!, cif: '', address: '', phone: '', email: '', contact_person: '', status: 'Activo'
             };
             setSuppliers([...suppliers, newSupplier]);
         }
@@ -227,8 +227,8 @@ const OrderReviewTab: React.FC<{ classroom: Classroom }> = ({ classroom }) => {
     const usersMap = useMemo(() => new Map(users.map(u => [u.id, u.name])), [users]);
     // FIX: Correctly filter orders by finding students in the current classroom via their `userId`. The `Order` type does not have `classroomId`.
     const classroomOrders = useMemo(() => {
-        const studentIdsInClass = new Set(users.filter(u => u.classroomId === classroom.id).map(u => u.id));
-        return orders.filter(o => studentIdsInClass.has(o.userId));
+        const studentIdsInClass = new Set(users.filter(u => u.classroom_id === classroom.id).map(u => u.id));
+        return orders.filter(o => studentIdsInClass.has(o.user_id));
     }, [orders, users, classroom.id]);
 
     return (
@@ -239,7 +239,7 @@ const OrderReviewTab: React.FC<{ classroom: Classroom }> = ({ classroom }) => {
                     {classroomOrders.map(order => (
                         <tr key={order.id} className="border-t">
                             {/* FIX: Use `order.userId` instead of the non-existent `order.studentId`. */}
-                            <td className="p-2">{usersMap.get(order.userId) || 'Desconocido'}</td>
+                            <td className="p-2">{usersMap.get(order.user_id) || 'Desconocido'}</td>
                             <td className="p-2">{new Date(order.date).toLocaleDateString()}</td>
                             <td className="p-2">{order.items.length}</td>
                             <td className="p-2">{order.status}</td>
@@ -274,7 +274,7 @@ const ConfigurationTab: React.FC<{ classroom: Classroom }> = ({ classroom }) => 
 const StudentFormModal: React.FC<{ student: User | null; onClose: () => void; onSave: (data: Partial<User>) => void; }> = ({ student, onClose, onSave }) => {
     const [formState, setFormState] = useState({
         name: student?.name || '', email: student?.email || '', password: '',
-        studentSimulatedProfile: student?.studentSimulatedProfile,
+        student_simulated_profile: student?.student_simulated_profile,
     });
     const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave({ ...formState, password: formState.password || undefined }); };
     return (
@@ -283,7 +283,7 @@ const StudentFormModal: React.FC<{ student: User | null; onClose: () => void; on
                 <input type="text" name="name" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} placeholder="Nombre" required className="w-full p-2 border rounded"/>
                 <input type="email" name="email" value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} placeholder="Email" required className="w-full p-2 border rounded"/>
                 <input type="password" name="password" placeholder={student ? "Nueva contraseña (opcional)" : "Contraseña"} onChange={e => setFormState({...formState, password: e.target.value})} required={!student} className="w-full p-2 border rounded"/>
-                <select name="studentSimulatedProfile" value={formState.studentSimulatedProfile || ''} onChange={e => setFormState({...formState, studentSimulatedProfile: e.target.value as any})} className="w-full p-2 border rounded">
+                <select name="student_simulated_profile" value={formState.student_simulated_profile || ''} onChange={e => setFormState({...formState, student_simulated_profile: e.target.value as any})} className="w-full p-2 border rounded">
                     <option value="">-- Rol Simulado --</option>
                     <option value={Profile.TEACHER}>{getProfileDisplayName(Profile.TEACHER, 'student_simulation')}</option>
                     <option value={Profile.ALMACEN}>{getProfileDisplayName(Profile.ALMACEN)}</option>
@@ -333,7 +333,7 @@ export const ClassroomList: React.FC = () => {
     const { currentUser } = useAuth();
     const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null);
 
-    const myClassrooms = useMemo(() => classrooms.filter(c => c.tutorId === currentUser?.id), [classrooms, currentUser]);
+    const myClassrooms = useMemo(() => classrooms.filter(c => c.tutor_id === currentUser?.id), [classrooms, currentUser]);
     
     // Auto-select if only one classroom
     useEffect(() => {
@@ -344,7 +344,7 @@ export const ClassroomList: React.FC = () => {
 
     if (selectedClassroom) {
         return (
-            <SandboxedClassroomProvider classroomId={selectedClassroom.id}>
+            <SandboxedClassroomProvider classroom_id={selectedClassroom.id}>
                 <ClassroomManagementView 
                     classroom={selectedClassroom}
                     onBack={() => setSelectedClassroom(null)}

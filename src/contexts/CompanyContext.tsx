@@ -12,13 +12,13 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 const initialCompanyInfo: Company = {
   name: "Manager Pro Edu",
   logo: "https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600",
-  printLogo: "https://tailwindui.com/img/logos/mark.svg?color=black",
+  print_logo: "https://tailwindui.com/img/logos/mark.svg?color=black",
   cif: "B12345678",
   address: "Calle Educación 123, Ciudad del Saber, 45678",
   phone: "555-010203",
   email: "contact@managerpro.edu",
-  defaultBudget: 300,
-  managerUserId: 'user-2',
+  default_budget: 300,
+  manager_user_id: 'user-2',
 };
 
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

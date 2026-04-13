@@ -8,7 +8,7 @@ import { Event, Order, OrderItem, Product } from '../../types';
 const EventSelector: React.FC = () => {
     const { events } = useData();
     const now = new Date();
-    const activeEvents = events.filter(e => e.type === 'Regular' && new Date(e.startDate) <= now && new Date(e.endDate) >= now);
+    const activeEvents = events.filter(e => e.type === 'Regular' && new Date(e.start_date) <= now && new Date(e.end_date) >= now);
 
     return (
         <div>
@@ -19,7 +19,7 @@ const EventSelector: React.FC = () => {
                         {activeEvents.map(event => (
                             <Link key={event.id} to={`/almacen/warehouse-order/${event.id}`} className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <p className="font-bold">{event.name}</p>
-                                <p className="text-sm text-gray-500">Válido hasta: {new Date(event.endDate).toLocaleString()}</p>
+                                <p className="text-sm text-gray-500">Válido hasta: {new Date(event.end_date).toLocaleString()}</p>
                             </Link>
                         ))}
                     </div>
@@ -65,15 +65,15 @@ const ReplenishmentForm: React.FC<{ event: Event }> = ({ event }) => {
         const newOrderItems: OrderItem[] = Array.from(orderItems.entries()).map(([productId, quantity]) => {
             const product = productsMap.get(productId)!;
             const price = product.suppliers.sort((a,b) => a.price - b.price)[0]?.price || 0;
-            return { productId, quantity, price, tax: product.tax };
+            return { product_id: productId, quantity, price, tax: product.tax };
         });
 
         const orderToSave: Order = {
             id: `ord-wh-${Date.now()}`,
-            userId: '0', // Special ID for warehouse stock orders
+            user_id: '0', // Special ID for warehouse stock orders
             date: new Date().toISOString(),
             status: 'Enviado',
-            eventId: event.id,
+            event_id: event.id,
             items: newOrderItems,
             cost: totalCost,
             notes: 'Pedido de reposición para Mini-Economato.',

@@ -50,8 +50,8 @@ export const TeacherManager: React.FC = () => {
                         password: userData.password || 'password123',
                         name: userData.name,
                         profiles: userData.profiles,
-                        contractType: userData.contractType,
-                        roleType: userData.roleType,
+                        contract_type: userData.contract_type,
+                        role_type: userData.role_type,
                         phone: userData.phone,
                         address: userData.address
                     })
@@ -63,7 +63,7 @@ export const TeacherManager: React.FC = () => {
                 }
 
                 const result = await response.json();
-                console.log('User created/linked successfully:', result.userId);
+                console.log('User created/linked successfully:', result.user_id);
                 alert('Usuario guardado correctamente.');
             } catch (error: any) {
                 console.error('Error creating user:', error);
@@ -76,9 +76,9 @@ export const TeacherManager: React.FC = () => {
     };
     
     const handleToggleStatus = (user: User) => {
-        const newStatus = user.activityStatus === 'Activo' ? 'De Baja' : 'Activo';
+        const newStatus = user.activity_status === 'Activo' ? 'De Baja' : 'Activo';
         const newLocationStatus = newStatus === 'Activo' ? 'En el centro' : 'Fuera del centro';
-        setUsers(users.map(u => u.id === user.id ? { ...u, activityStatus: newStatus, locationStatus: newLocationStatus } : u));
+        setUsers(users.map(u => u.id === user.id ? { ...u, activity_status: newStatus, location_status: newLocationStatus } : u));
     };
 
     const handleDeleteUser = () => {
@@ -127,21 +127,21 @@ export const TeacherManager: React.FC = () => {
                                     <td className="px-6 py-4">{user.email}</td>
                                     <td className="px-6 py-4">{user.profiles.map(p => getProfileDisplayName(p)).join(', ')}</td>
                                     <td className="px-6 py-4 text-center">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.activityStatus === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                            {user.activityStatus}
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.activity_status === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                            {user.activity_status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                       {user.locationStatus === 'Fuera del centro' && (
+                                       {user.location_status === 'Fuera del centro' && (
                                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-800">
-                                            {user.locationStatus}
+                                            {user.location_status}
                                         </span>
                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium space-x-4 no-print">
                                         <button onClick={() => handleOpenFormModal(user)} className="text-blue-600 dark:text-blue-500 hover:underline">Ver/Editar</button>
-                                        <button onClick={() => handleToggleStatus(user)} className={user.activityStatus === 'Activo' ? 'text-orange-600 hover:underline' : 'text-green-600 hover:underline'}>
-                                            {user.activityStatus === 'Activo' ? 'Dar de Baja' : 'Reactivar'}
+                                        <button onClick={() => handleToggleStatus(user)} className={user.activity_status === 'Activo' ? 'text-orange-600 hover:underline' : 'text-green-600 hover:underline'}>
+                                            {user.activity_status === 'Activo' ? 'Dar de Baja' : 'Reactivar'}
                                         </button>
                                         <button onClick={() => handleOpenDeleteModal(user)} className="text-red-600 dark:text-red-500 hover:underline">Eliminar</button>
                                     </td>
@@ -202,8 +202,8 @@ const UserFormModal: React.FC<{
         email: user?.email || '',
         password: '',
         profiles: user?.profiles || [],
-        contractType: user?.contractType || 'Fijo',
-        roleType: user?.roleType || 'Titular',
+        contract_type: user?.contract_type || 'Fijo',
+        role_type: user?.role_type || 'Titular',
         phone: user?.phone || '',
         address: user?.address || '',
     });
@@ -213,14 +213,14 @@ const UserFormModal: React.FC<{
         const groupMap: Map<string, Group> = new Map(allGroups.map(g => [g.id, g]));
         const moduleMap: Map<string, Module> = new Map(allModules.map(m => [m.id, m]));
         return allAssignments
-            .filter(a => a.userId === user.id)
+            .filter(a => a.user_id === user.id)
             .map(a => {
-                const group = groupMap.get(a.groupId);
-                const module = group ? moduleMap.get(group.moduleId) : undefined;
+                const group = groupMap.get(a.group_id);
+                const module = group ? moduleMap.get(group.module_id) : undefined;
                 return {
-                    groupId: a.groupId,
-                    groupName: group?.name || 'Desconocido',
-                    moduleName: module?.name || 'Desconocido'
+                    group_id: a.group_id,
+                    group_name: group?.name || 'Desconocido',
+                    module_name: module?.name || 'Desconocido'
                 };
             });
     }, [user, allAssignments, allGroups, allModules]);
@@ -273,11 +273,11 @@ const UserFormModal: React.FC<{
 
                 {formState.profiles.includes(Profile.TEACHER) && (
                     <div className="grid grid-cols-2 gap-4">
-                        <select name="contractType" value={formState.contractType} onChange={handleChange} className="w-full p-2 border rounded dark:bg-gray-700">
+                        <select name="contract_type" value={formState.contract_type} onChange={handleChange} className="w-full p-2 border rounded dark:bg-gray-700">
                             <option value="Fijo">Fijo</option>
                             <option value="Interino">Interino</option>
                         </select>
-                         <select name="roleType" value={formState.roleType} onChange={handleChange} className="w-full p-2 border rounded dark:bg-gray-700">
+                         <select name="role_type" value={formState.role_type} onChange={handleChange} className="w-full p-2 border rounded dark:bg-gray-700">
                             <option value="Titular">Titular</option>
                             <option value="Sustituto">Sustituto</option>
                         </select>
@@ -288,7 +288,7 @@ const UserFormModal: React.FC<{
                     <div className="pt-2">
                         <h4 className="font-semibold text-sm">Módulos Asignados</h4>
                         <ul className="list-disc list-inside text-xs mt-1 bg-gray-100 dark:bg-gray-700 p-2 rounded-md max-h-24 overflow-y-auto">
-                            {userAssignments.map(a => <li key={a.groupId}>{a.moduleName} - {a.groupName}</li>)}
+                            {userAssignments.map(a => <li key={a.group_id}>{a.module_name} - {a.group_name}</li>)}
                         </ul>
                     </div>
                 )}

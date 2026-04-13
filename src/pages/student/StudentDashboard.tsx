@@ -11,13 +11,13 @@ export const StudentDashboard: React.FC = () => {
         return <Navigate to="/login" />;
     }
 
-    const { studentSimulatedProfile } = currentUser;
+    const { student_simulated_profile } = currentUser;
 
-    if (studentSimulatedProfile === Profile.TEACHER) {
+    if (student_simulated_profile === Profile.TEACHER) {
         return <Navigate to="/student/teacher-dashboard" replace />;
     }
     
-    if (studentSimulatedProfile === Profile.ALMACEN) {
+    if (student_simulated_profile === Profile.ALMACEN) {
         return <Navigate to="/student/almacen-dashboard" replace />;
     }
 

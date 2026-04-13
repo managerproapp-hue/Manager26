@@ -6,9 +6,9 @@ import { printPage } from '../../utils/export';
 export const StudentMiniEconomato: React.FC = () => {
 
     const dummyStock = [
-        { name: 'Solomillo de Práctica', stock: 5, minStock: 10 },
-        { name: 'Harina de Demostración', stock: 25, minStock: 15 },
-        { name: 'Aceite Ficticio', stock: 2, minStock: 5 },
+        { name: 'Solomillo de Práctica', stock: 5, min_stock: 10 },
+        { name: 'Harina de Demostración', stock: 25, min_stock: 15 },
+        { name: 'Aceite Ficticio', stock: 2, min_stock: 5 },
     ];
 
     const getStockLevelClass = (current: number, min: number) => {
@@ -31,10 +31,10 @@ export const StudentMiniEconomato: React.FC = () => {
             <Card title="Stock del Aula">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {dummyStock.map((item, index) => (
-                        <div key={index} className={`p-4 rounded-lg border ${getStockLevelClass(item.stock, item.minStock)}`}>
+                        <div key={index} className={`p-4 rounded-lg border ${getStockLevelClass(item.stock, item.min_stock)}`}>
                             <h4 className="font-bold">{item.name}</h4>
                             <p>Stock Actual: <span className="font-bold text-xl">{item.stock}</span></p>
-                            <p className="text-sm">Stock Mínimo: {item.minStock}</p>
+                            <p className="text-sm">Stock Mínimo: {item.min_stock}</p>
                         </div>
                     ))}
                 </div>

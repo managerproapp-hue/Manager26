@@ -88,7 +88,7 @@ export const Sidebar: React.FC = () => {
   
   let navItems: { name: string; href: string; icon: React.ReactNode; }[] = [];
 
-  const isTutor = useMemo(() => classrooms.some(c => c.tutorId === currentUser?.id), [classrooms, currentUser]);
+  const isTutor = useMemo(() => classrooms.some(c => c.tutor_id === currentUser?.id), [classrooms, currentUser]);
 
   switch (selectedProfile) {
     case Profile.ADMIN:
@@ -104,9 +104,9 @@ export const Sidebar: React.FC = () => {
       navItems = creatorNav;
       break;
     case Profile.STUDENT:
-        if (currentUser?.studentSimulatedProfile === Profile.TEACHER) {
+        if (currentUser?.student_simulated_profile === Profile.TEACHER) {
             navItems = rewriteStudentNav(teacherNav.filter(item => item.name !== 'Aula de Almacén' && item.name !== 'Ventas'), '/student');
-        } else if (currentUser?.studentSimulatedProfile === Profile.ALMACEN) {
+        } else if (currentUser?.student_simulated_profile === Profile.ALMACEN) {
             navItems = rewriteStudentNav(almacenNav, '/student');
         } else {
              navItems = [{ name: 'Panel de control', href: '/student/dashboard', icon: <ChartIcon /> }];
@@ -143,7 +143,7 @@ export const Sidebar: React.FC = () => {
       </nav>
       <div className="px-4 py-4 border-t border-gray-700/50 text-center text-xs text-gray-500 flex flex-col items-center space-y-2">
         <img src={creatorInfo.logo} alt="Logo del Creador" className="h-10 w-10 rounded-full object-cover" />
-        <p className="font-semibold text-gray-300 text-sm">{creatorInfo.appName || 'Manager Pro'}</p>
+        <p className="font-semibold text-gray-300 text-sm">{creatorInfo.app_name || 'Manager Pro'}</p>
         <div>
             <p>{creatorInfo.copyright}</p>
             <a href={creatorInfo.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary-400">

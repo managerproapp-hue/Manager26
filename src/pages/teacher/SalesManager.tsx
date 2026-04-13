@@ -62,7 +62,7 @@ export const SalesManager: React.FC = () => {
 
     const mySales = useMemo(() =>
         sales
-            .filter(s => s.teacherId === currentUser?.id)
+            .filter(s => s.teacher_id === currentUser?.id)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     , [sales, currentUser]);
 
@@ -85,7 +85,7 @@ export const SalesManager: React.FC = () => {
         } else { // Creating
             const newSale: Sale = {
                 id: `sale-${Date.now()}`,
-                teacherId: currentUser.id,
+                teacher_id: currentUser.id,
                 date: new Date(saleData.date!).toISOString(),
                 amount: saleData.amount!,
                 category: saleData.category!,

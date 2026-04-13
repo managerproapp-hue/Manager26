@@ -25,11 +25,11 @@ export const ComposeMessageModal: React.FC<{
     const recipientOptions = useMemo(() => {
         const potentialRecipients = users.filter(u => u.id !== currentUser?.id && !SUPER_USER_EMAILS.includes(u.email));
 
-        if (isStudent && currentUser?.classroomId) {
-            const myClassroom = classrooms.find(c => c.id === currentUser.classroomId);
+        if (isStudent && currentUser?.classroom_id) {
+            const myClassroom = classrooms.find(c => c.id === currentUser.classroom_id);
             if (myClassroom) {
-                const tutor = users.find(u => u.id === myClassroom.tutorId);
-                const classmates = potentialRecipients.filter(u => u.classroomId === currentUser.classroomId);
+                const tutor = users.find(u => u.id === myClassroom.tutor_id);
+                const classmates = potentialRecipients.filter(u => u.classroom_id === currentUser.classroom_id);
                 return [tutor, ...classmates].filter((u): u is User => !!u);
             }
             return [];
@@ -45,7 +45,7 @@ export const ComposeMessageModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSend({ recipientIds: recipients, subject, body });
+        onSend({ recipient_ids: recipients, subject, body });
     };
 
     return (
@@ -85,22 +85,22 @@ export const Messaging: React.FC = () => {
 
     const myInbox = useMemo(() => 
         messages
-            .filter(m => m.recipientIds.includes(currentUser?.id || ''))
+            .filter(m => m.recipient_ids.includes(currentUser?.id || ''))
             .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     , [messages, currentUser]);
 
     const mySentBox = useMemo(() =>
         messages
-            .filter(m => m.senderId === currentUser?.id)
+            .filter(m => m.sender_id === currentUser?.id)
             .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     , [messages, currentUser]);
 
-    const handleSendMessage = (newMessage: Omit<Message, 'id' | 'date' | 'senderId' | 'readBy'>) => {
+    const handleSendMessage = (newMessage: Omit<Message, 'id' | 'date' | 'sender_id' | 'read_by'>) => {
         const message: Message = {
             id: `msg-${Date.now()}`,
-            senderId: currentUser!.id,
+            sender_id: currentUser!.id,
             date: new Date().toISOString(),
-            readBy: {},
+            read_by: {},
             ...newMessage
         };
         setMessages([...messages, message]);
@@ -109,8 +109,8 @@ export const Messaging: React.FC = () => {
 
     const handleMessageClick = (message: Message) => {
         setSelectedMessage(message);
-        if (view === 'inbox' && currentUser && !message.readBy[currentUser.id]) {
-            const updatedMessage = { ...message, readBy: { ...message.readBy, [currentUser.id]: true } };
+        if (view === 'inbox' && currentUser && !message.read_by[currentUser.id]) {
+            const updatedMessage = { ...message, read_by: { ...message.read_by, [currentUser.id]: true } };
             setMessages(messages.map(m => m.id === message.id ? updatedMessage : m));
         }
     };
@@ -139,19 +139,19 @@ export const Messaging: React.FC = () => {
             </div>
             
             <div className="mb-4 flex space-x-1 bg-gray-200 dark:bg-gray-700 p-1 rounded-lg no-print">
-                <button onClick={() => setView('inbox')} className={`w-full py-2 rounded-md ${view === 'inbox' ? 'bg-white dark:bg-gray-800 shadow' : ''}`}>Bandeja de Entrada ({myInbox.filter(m => currentUser && !m.readBy[currentUser.id]).length})</button>
+                <button onClick={() => setView('inbox')} className={`w-full py-2 rounded-md ${view === 'inbox' ? 'bg-white dark:bg-gray-800 shadow' : ''}`}>Bandeja de Entrada ({myInbox.filter(m => currentUser && !m.read_by[currentUser.id]).length})</button>
                 <button onClick={() => setView('sent')} className={`w-full py-2 rounded-md ${view === 'sent' ? 'bg-white dark:bg-gray-800 shadow' : ''}`}>Enviados</button>
             </div>
 
             <Card title={view === 'inbox' ? 'Bandeja de Entrada' : 'Mensajes Enviados'}>
                 <div className="space-y-2">
                     {(view === 'inbox' ? myInbox : mySentBox).map(message => (
-                        <div key={message.id} onClick={() => handleMessageClick(message)} className={`p-3 border-l-4 rounded-r-md cursor-pointer ${ (view === 'sent' || (currentUser && message.readBy[currentUser.id])) ? 'bg-gray-50 dark:bg-gray-700 border-gray-300' : 'bg-blue-50 dark:bg-blue-900/50 border-primary-500'}`}>
+                        <div key={message.id} onClick={() => handleMessageClick(message)} className={`p-3 border-l-4 rounded-r-md cursor-pointer ${ (view === 'sent' || (currentUser && message.read_by[currentUser.id])) ? 'bg-gray-50 dark:bg-gray-700 border-gray-300' : 'bg-blue-50 dark:bg-blue-900/50 border-primary-500'}`}>
                             <div className="flex justify-between text-sm">
                                 <p className="font-bold">
                                     {view === 'inbox' 
-                                        ? usersMap.get(message.senderId)?.name || 'Sistema'
-                                        : message.recipientIds.map(id => usersMap.get(id)?.name).join(', ')
+                                        ? usersMap.get(message.sender_id)?.name || 'Sistema'
+                                        : message.recipient_ids.map(id => usersMap.get(id)?.name).join(', ')
                                     }
                                 </p>
                                 <div className="flex items-center space-x-3">
@@ -179,8 +179,8 @@ export const Messaging: React.FC = () => {
 const MessageDetailModal: React.FC<{ message: Message, usersMap: Map<string, User>, onClose: () => void }> = ({ message, usersMap, onClose }) => (
     <Modal isOpen={true} onClose={onClose} title={message.subject}>
         <div className="space-y-2 text-sm">
-            <p><strong>De:</strong> {usersMap.get(message.senderId)?.name || 'Sistema'}</p>
-            <p><strong>Para:</strong> {message.recipientIds.map(id => usersMap.get(id)?.name).join(', ')}</p>
+            <p><strong>De:</strong> {usersMap.get(message.sender_id)?.name || 'Sistema'}</p>
+            <p><strong>Para:</strong> {message.recipient_ids.map(id => usersMap.get(id)?.name).join(', ')}</p>
             <p><strong>Fecha:</strong> {new Date(message.date).toLocaleString()}</p>
         </div>
         <div className="mt-4 pt-4 border-t dark:border-gray-600 whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded-md max-h-60 overflow-y-auto">

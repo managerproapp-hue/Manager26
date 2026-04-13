@@ -13,7 +13,7 @@ export const MyProfile: React.FC = () => {
     const [personalInfo, setPersonalInfo] = useState({
         name: currentUser?.name || '',
         phone: currentUser?.phone || '',
-        secondaryPhone: currentUser?.secondaryPhone || '',
+        secondary_phone: currentUser?.secondary_phone || '',
         address: currentUser?.address || '',
         avatar: currentUser?.avatar || '',
     });
@@ -44,7 +44,7 @@ export const MyProfile: React.FC = () => {
         const updatedData = {
             name: personalInfo.name,
             phone: personalInfo.phone,
-            secondaryPhone: personalInfo.secondaryPhone,
+            secondary_phone: personalInfo.secondary_phone,
             address: personalInfo.address,
             avatar: personalInfo.avatar,
         };
@@ -75,12 +75,12 @@ export const MyProfile: React.FC = () => {
 
         const newMessage: Message = {
             id: `msg-sys-${Date.now()}`,
-            senderId: 'system',
-            recipientIds: [currentUser.id],
+            sender_id: 'system',
+            recipient_ids: [currentUser.id],
             subject: 'Actualización de Seguridad de la Cuenta',
             body: 'Tu contraseña ha sido actualizada con éxito.',
             date: new Date().toISOString(),
-            readBy: {},
+            read_by: {},
         };
         setMessages(prev => [...prev, newMessage]);
         
@@ -116,7 +116,7 @@ export const MyProfile: React.FC = () => {
                                 </div>
                                  <div>
                                     <label className="block text-sm">Teléfono Secundario</label>
-                                    <input type="tel" value={personalInfo.secondaryPhone} onChange={e => setPersonalInfo({...personalInfo, secondaryPhone: e.target.value})} className="w-full mt-1 p-2 border rounded"/>
+                                    <input type="tel" value={personalInfo.secondary_phone} onChange={e => setPersonalInfo({...personalInfo, secondary_phone: e.target.value})} className="w-full mt-1 p-2 border rounded"/>
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm">Dirección</label>
@@ -153,9 +153,9 @@ export const MyProfile: React.FC = () => {
                     {currentUser.profiles.includes(Profile.TEACHER) && (
                         <Card title="Información de Profesor" icon={<BookIcon className="w-8 h-8" />}>
                             <div className="space-y-3 text-sm">
-                                <div><span className="font-semibold">Tipo:</span> {currentUser.contractType}</div>
-                                <div><span className="font-semibold">Estatus:</span> {currentUser.roleType}</div>
-                                <div><span className="font-semibold">Estado de Actividad:</span> {currentUser.activityStatus}</div>
+                                <div><span className="font-semibold">Tipo:</span> {currentUser.contract_type}</div>
+                                <div><span className="font-semibold">Estatus:</span> {currentUser.role_type}</div>
+                                <div><span className="font-semibold">Estado de Actividad:</span> {currentUser.activity_status}</div>
                                 <p className="text-xs text-gray-500 pt-2 border-t mt-2">Esta información es de solo lectura y la gestiona el Administrador.</p>
                             </div>
                         </Card>
@@ -165,16 +165,16 @@ export const MyProfile: React.FC = () => {
                             <div className="space-y-3 text-sm">
                                 <div>
                                     <span className="font-semibold">Rol de Simulación:</span> {
-                                        currentUser.studentSimulatedProfile
-                                        ? getProfileDisplayName(currentUser.studentSimulatedProfile)
+                                        currentUser.student_simulated_profile
+                                        ? getProfileDisplayName(currentUser.student_simulated_profile)
                                         : 'Sin Asignar'
                                     }
                                 </div>
                                 <div>
                                     <span className="font-semibold">Estado de Actividad:</span> {
-                                         currentUser.activityStatus === 'De Baja'
+                                         currentUser.activity_status === 'De Baja'
                                          ? 'De Baja'
-                                         : currentUser.studentSimulatedProfile
+                                         : currentUser.student_simulated_profile
                                              ? 'Puede comenzar la práctica'
                                              : 'Esperando asignación de rol'
                                     }

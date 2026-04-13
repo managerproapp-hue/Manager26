@@ -20,10 +20,10 @@ const StatCard: React.FC<{ title: string; icon: React.ReactNode; value: string |
 export const AdminDashboard: React.FC = () => {
   const { users, products, suppliers, events } = useData();
 
-  const teacherCount = users.filter(u => u.profiles.includes(Profile.TEACHER) && u.activityStatus === 'Activo').length;
+  const teacherCount = users.filter(u => u.profiles.includes(Profile.TEACHER) && u.activity_status === 'Activo').length;
   const productCount = products.length;
   const supplierCount = suppliers.filter(s => s.status === 'Activo').length;
-  const activeEventsCount = events.filter(e => new Date(e.endDate) > new Date()).length;
+  const activeEventsCount = events.filter(e => new Date(e.end_date) > new Date()).length;
 
   return (
     <div>

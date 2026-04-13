@@ -90,8 +90,8 @@ export const UserManager: React.FC = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3">{user.profiles.map(p => getProfileDisplayName(p)).join(', ')}</td>
-                                    <td className="px-4 py-3">{user.activityStatus}</td>
+                                     <td className="px-4 py-3">{user.profiles.map(p => getProfileDisplayName(p)).join(', ')}</td>
+                                    <td className="px-4 py-3">{user.activity_status}</td>
                                     <td className="px-4 py-3 space-x-3 text-xs font-medium no-print">
                                         <button onClick={() => handleOpenModal(user)} className="text-primary-600 hover:underline">Editar</button>
                                         <button onClick={() => handleDeleteUser(user.id)} className="text-red-600 hover:underline">Eliminar</button>
@@ -113,7 +113,7 @@ export const UserManager: React.FC = () => {
 
 const UserFormModal: React.FC<{ user: User | null, onClose: () => void, onSave: (user: User) => void }> = ({ user, onClose, onSave }) => {
     const [formState, setFormState] = useState<User>(user || {
-        id: '', name: '', email: '', password: '', avatar: '', profiles: [], activityStatus: 'Activo', locationStatus: 'En el centro'
+        id: '', name: '', email: '', password: '', avatar: '', profiles: [], activity_status: 'Activo', location_status: 'En el centro'
     });
     
     const handleMultiProfileChange = (profile: Profile) => {

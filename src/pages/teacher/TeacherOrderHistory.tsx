@@ -16,7 +16,7 @@ export const TeacherOrderHistory: React.FC = () => {
     const myOrders = useMemo(() => {
         if (!currentUser) return [];
         return orders
-            .filter(o => o.userId === currentUser.id)
+            .filter(o => o.user_id === currentUser.id)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [orders, currentUser]);
 
@@ -36,27 +36,27 @@ export const TeacherOrderHistory: React.FC = () => {
                         {myOrders.map(order => (
                             <details key={order.id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg print:block print:p-0 print:border-b print:mb-4">
                                 <summary className="font-semibold cursor-pointer flex justify-between">
-                                    <span>Pedido para "{eventsMap.get(order.eventId)}" - {new Date(order.date).toLocaleDateString()}</span>
+                                    <span>Pedido para "{eventsMap.get(order.event_id)}" - {new Date(order.date).toLocaleDateString()}</span>
                                     <span className="font-mono">{order.status} - {order.cost?.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span>
                                 </summary>
                                 <div className="mt-4 pt-4 border-t dark:border-gray-600">
                                     <h4 className="font-bold">Artículos del Pedido:</h4>
                                     <ul className="list-disc list-inside text-sm mt-2">
                                         {order.items.map(item => {
-                                            const product = productsMap.get(item.productId);
+                                            const product = productsMap.get(item.product_id);
                                             return (
-                                            <li key={item.productId}>
+                                            <li key={item.product_id}>
                                                 {product?.name || 'Producto Desconocido'}: {item.quantity} {product?.unit} x {item.price.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                                             </li>
                                         )})}
                                     </ul>
-                                    {order.newProductRequests && order.newProductRequests.length > 0 && (
+                                    {order.new_product_requests && order.new_product_requests.length > 0 && (
                                         <>
                                             <h4 className="font-bold mt-3">Solicitudes de Nuevos Productos:</h4>
                                             <ul className="list-disc list-inside text-sm mt-2">
-                                            {order.newProductRequests.map((req, index) => (
+                                            {order.new_product_requests.map((req, index) => (
                                                 <li key={index}>
-                                                    {req.productName} (x{req.quantity}) - Notas: {req.notes}
+                                                    {req.product_name} (x{req.quantity}) - Notas: {req.notes}
                                                 </li>
                                             ))}
                                             </ul>

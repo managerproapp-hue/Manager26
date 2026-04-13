@@ -10,16 +10,16 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   avatar TEXT,
   profiles TEXT[] DEFAULT '{}',
-  activityStatus TEXT CHECK (activityStatus IN ('Activo', 'De Baja')),
-  locationStatus TEXT CHECK (locationStatus IN ('En el centro', 'Fuera del centro')),
-  contractType TEXT CHECK (contractType IN ('Fijo', 'Interino')),
-  roleType TEXT CHECK (roleType IN ('Titular', 'Sustituto')),
-  classroomId TEXT,
+  activity_status TEXT CHECK (activity_status IN ('Activo', 'De Baja')),
+  location_status TEXT CHECK (location_status IN ('En el centro', 'Fuera del centro')),
+  contract_type TEXT CHECK (contract_type IN ('Fijo', 'Interino')),
+  role_type TEXT CHECK (role_type IN ('Titular', 'Sustituto')),
+  classroom_id TEXT,
   phone TEXT,
-  secondaryPhone TEXT,
+  secondary_phone TEXT,
   address TEXT,
-  studentSimulatedProfile TEXT CHECK (studentSimulatedProfile IN ('teacher', 'almacen')),
-  mustChangePassword BOOLEAN DEFAULT false,
+  student_simulated_profile TEXT CHECK (student_simulated_profile IN ('teacher', 'almacen')),
+  must_change_password BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -139,21 +139,114 @@ CREATE TABLE IF NOT EXISTS classrooms (
   teacher_id UUID REFERENCES users(id)
 );
 
--- RLS (Row Level Security) - Basic setup
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+-- Training Cycles Table
+CREATE TABLE IF NOT EXISTS training_cycles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- Policies (Example: Allow authenticated users to read everything)
-CREATE POLICY "Allow authenticated read" ON users FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow users to update their own record" ON users FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Allow service role to do everything" ON users FOR ALL USING (true);
+-- Modules Table
+CREATE TABLE IF NOT EXISTS modules (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  cycle_id UUID REFERENCES training_cycles(id),
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-CREATE POLICY "Allow authenticated read" ON products FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated read" ON suppliers FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated read" ON events FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated read" ON orders FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated read" ON recipes FOR SELECT USING (auth.role() = 'authenticated');
+-- Groups Table
+CREATE TABLE IF NOT EXISTS groups (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  module_id UUID REFERENCES modules(id),
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Assignments Table
+CREATE TABLE IF NOT EXISTS assignments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  group_id UUID REFERENCES groups(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Stock Items Table
+CREATE TABLE IF NOT EXISTS mini_economato_stock (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id UUID REFERENCES products(id),
+  quantity NUMERIC NOT NULL DEFAULT 0,
+  min_stock NUMERIC NOT NULL DEFAULT 0,
+  location TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Service Groups Table
+CREATE TABLE IF NOT EXISTS service_groups (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Services Table
+CREATE TABLE IF NOT EXISTS services (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  group_id UUID REFERENCES service_groups(id),
+  name TEXT NOT NULL,
+  price NUMERIC NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Classroom Products Table
+CREATE TABLE IF NOT EXISTS classroom_products (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  classroom_id UUID REFERENCES classrooms(id),
+  product_id UUID REFERENCES products(id),
+  quantity NUMERIC NOT NULL DEFAULT 0
+);
+
+-- Classroom Suppliers Table
+CREATE TABLE IF NOT EXISTS classroom_suppliers (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  classroom_id UUID REFERENCES classrooms(id),
+  supplier_id UUID REFERENCES suppliers(id)
+);
+
+-- Classroom Events Table
+CREATE TABLE IF NOT EXISTS classroom_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  classroom_id UUID REFERENCES classrooms(id),
+  event_id UUID REFERENCES events(id)
+);
+
+-- Classroom Orders Table
+CREATE TABLE IF NOT EXISTS classroom_orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  classroom_id UUID REFERENCES classrooms(id),
+  order_id UUID REFERENCES orders(id)
+);
+
+-- RLS for new tables
+ALTER TABLE training_cycles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE modules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mini_economato_stock ENABLE ROW LEVEL SECURITY;
+ALTER TABLE service_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE classroom_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE classroom_suppliers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE classroom_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE classroom_orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow authenticated read" ON training_cycles FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON modules FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON groups FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON assignments FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON mini_economato_stock FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON service_groups FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON services FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON classroom_products FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON classroom_suppliers FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON classroom_events FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated read" ON classroom_orders FOR SELECT USING (auth.role() = 'authenticated');

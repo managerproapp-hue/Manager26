@@ -10,19 +10,19 @@ import { BlockedAccess } from '../shared/BlockedAccess';
 import { TrashIcon, PlusIcon } from '../../components/icons';
 
 export const OrderForm: React.FC = () => {
-    const { eventId, orderId } = useParams<{ eventId?: string; orderId?: string }>();
+    const { event_id, order_id } = useParams<{ event_id?: string; order_id?: string }>();
     const navigate = useNavigate();
     const { events, products, orders, setOrders } = useData();
     const { currentUser } = useAuth();
     
     const [orderItems, setOrderItems] = useState<Map<string, number>>(new Map());
     const [notes, setNotes] = useState('');
-    const [newRequests, setNewRequests] = useState<NewProductRequest[]>([]);
-    const [newRequestForm, setNewRequestForm] = useState({ productName: '', quantity: 1, notes: '' });
+    const [new_requests, set_new_requests] = useState<NewProductRequest[]>([]);
+    const [new_request_form, set_new_request_form] = useState({ product_name: '', quantity: 1, notes: '' });
     const [isDirty, setIsDirty] = useState(false);
 
-    const event = useMemo(() => events.find(e => e.id === eventId || (orderId && orders.find(o => o.id === orderId)?.eventId === e.id)), [events, eventId, orderId, orders]);
-    const existingOrder = useMemo(() => orderId ? orders.find(o => o.id === orderId) : null, [orders, orderId]);
+    const event = useMemo(() => events.find(e => e.id === event_id || (order_id && orders.find(o => o.id === order_id)?.event_id === e.id)), [events, event_id, order_id, orders]);
+    const existingOrder = useMemo(() => order_id ? orders.find(o => o.id === order_id) : null, [orders, order_id]);
     
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
 
@@ -30,11 +30,11 @@ export const OrderForm: React.FC = () => {
         if (existingOrder) {
             const itemsMap = new Map<string, number>();
             existingOrder.items.forEach(item => {
-                itemsMap.set(item.productId, item.quantity);
+                itemsMap.set(item.product_id, item.quantity);
             });
             setOrderItems(itemsMap);
             setNotes(existingOrder.notes || '');
-            setNewRequests(existingOrder.newProductRequests || []);
+            set_new_requests(existingOrder.new_product_requests || []);
         }
     }, [existingOrder]);
     
@@ -50,35 +50,35 @@ export const OrderForm: React.FC = () => {
     }, [isDirty]);
 
 
-    const handleQuantityChange = (productId: string, quantity: number) => {
+    const handleQuantityChange = (product_id: string, quantity: number) => {
         setIsDirty(true);
         const newItems = new Map(orderItems);
         if (quantity > 0) {
-            newItems.set(productId, quantity);
+            newItems.set(product_id, quantity);
         } else {
-            newItems.delete(productId);
+            newItems.delete(product_id);
         }
         setOrderItems(newItems);
     };
     
     const handleAddRequest = (e: React.FormEvent) => {
         e.preventDefault();
-        if(newRequestForm.productName && newRequestForm.quantity > 0) {
+        if(new_request_form.product_name && new_request_form.quantity > 0) {
             setIsDirty(true);
-            setNewRequests([...newRequests, { ...newRequestForm, quantity: Number(newRequestForm.quantity) }]);
-            setNewRequestForm({ productName: '', quantity: 1, notes: '' });
+            set_new_requests([...new_requests, { ...new_request_form, quantity: Number(new_request_form.quantity) }]);
+            set_new_request_form({ product_name: '', quantity: 1, notes: '' });
         }
     };
 
     const handleRemoveRequest = (index: number) => {
         setIsDirty(true);
-        setNewRequests(newRequests.filter((_, i) => i !== index));
+        set_new_requests(new_requests.filter((_, i) => i !== index));
     };
 
     const calculateTotalCost = useMemo(() => {
         let total = 0;
-        orderItems.forEach((quantity, productId) => {
-            const product = productsMap.get(productId);
+        orderItems.forEach((quantity, product_id) => {
+            const product = productsMap.get(product_id);
             if (product && product.suppliers.length > 0) {
                 const price = product.suppliers[0].price; // Simplified: use first supplier's price
                 const itemCost = price * quantity;
@@ -97,10 +97,10 @@ export const OrderForm: React.FC = () => {
         
         setIsDirty(false);
 
-        const newOrderItems: OrderItem[] = Array.from(orderItems.entries()).map(([productId, quantity]) => {
-            const product = productsMap.get(productId)!;
+        const newOrderItems: OrderItem[] = Array.from(orderItems.entries()).map(([product_id, quantity]) => {
+            const product = productsMap.get(product_id)!;
             return {
-                productId,
+                product_id,
                 quantity,
                 price: product.suppliers[0]?.price || 0,
                 tax: product.tax,
@@ -109,12 +109,12 @@ export const OrderForm: React.FC = () => {
 
         const orderToSave: Order = {
             id: existingOrder?.id || `ord-${Date.now()}`,
-            userId: currentUser.id,
+            user_id: currentUser.id,
             date: new Date().toISOString(),
             status,
-            eventId: event.id,
+            event_id: event.id,
             items: newOrderItems,
-            newProductRequests: newRequests,
+            new_product_requests: new_requests,
             cost: calculateTotalCost,
             notes: notes,
         };
@@ -157,25 +157,25 @@ export const OrderForm: React.FC = () => {
                  <form onSubmit={handleAddRequest} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                     <div className="md:col-span-2">
                         <label className="text-sm">Nombre del Producto</label>
-                        <input type="text" value={newRequestForm.productName} onChange={e => setNewRequestForm({...newRequestForm, productName: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700"/>
+                        <input type="text" value={new_request_form.product_name} onChange={e => set_new_request_form({...new_request_form, product_name: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700"/>
                     </div>
                     <div>
                         <label className="text-sm">Cantidad</label>
-                        <input type="number" value={newRequestForm.quantity} min="1" onChange={e => setNewRequestForm({...newRequestForm, quantity: Number(e.target.value)})} className="w-full p-2 border rounded dark:bg-gray-700"/>
+                        <input type="number" value={new_request_form.quantity} min="1" onChange={e => set_new_request_form({...new_request_form, quantity: Number(e.target.value)})} className="w-full p-2 border rounded dark:bg-gray-700"/>
                     </div>
                     <div>
                         <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded flex items-center justify-center"><PlusIcon className="w-5 h-5 mr-1"/> Añadir Solicitud</button>
                     </div>
                     <div className="md:col-span-4">
                         <label className="text-sm">Notas (proveedor/precio sugerido)</label>
-                        <input type="text" value={newRequestForm.notes} onChange={e => setNewRequestForm({...newRequestForm, notes: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700"/>
+                        <input type="text" value={new_request_form.notes} onChange={e => set_new_request_form({...new_request_form, notes: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700"/>
                     </div>
                 </form>
                 <div className="mt-4 space-y-2">
-                    {newRequests.map((req, index) => (
+                    {new_requests.map((req, index) => (
                         <div key={index} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-900/50 rounded">
                             <div>
-                                <p><strong>{req.productName}</strong> x {req.quantity}</p>
+                                <p><strong>{req.product_name}</strong> x {req.quantity}</p>
                                 <p className="text-xs text-gray-500">{req.notes}</p>
                             </div>
                             <button onClick={() => handleRemoveRequest(index)} className="text-red-500"><TrashIcon className="w-5 h-5"/></button>

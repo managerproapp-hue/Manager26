@@ -13,30 +13,30 @@ const SERVICE_ROLES: ServiceRole[] = ['Cocina', 'Postres', 'Servicios (Sala)', '
 
 // --- DETAIL VIEW COMPONENT ---
 const ServiceDetailView: React.FC<{ service: Service; onBack: () => void }> = ({ service, onBack }) => {
-    const { services, setServices, serviceGroups, users, recipes, products, setOrders, events } = useData();
+    const { services, setServices, service_groups, users, recipes, products, setOrders, events } = useData();
     const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
     const navigate = useNavigate();
 
-    const usersMap = useMemo(() => new Map<string, User>(users.map(u => [u.id, u])), [users]);
-    const recipesMap = useMemo(() => new Map(recipes.map(r => [r.id, r])), [recipes]);
-    const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
+    const usersMap = useMemo(() => new Map<string, User>(users.map((u: any) => [u.id, u])), [users]);
+    const recipesMap = useMemo(() => new Map(recipes.map((r: any) => [r.id, r])), [recipes]);
+    const productsMap = useMemo(() => new Map(products.map((p: any) => [p.id, p])), [products]);
 
-    const group = useMemo(() => serviceGroups.find(g => g.id === service.serviceGroupId), [serviceGroups, service.serviceGroupId]);
-    const teachersInGroup = useMemo(() => group?.teacherIds.map(id => usersMap.get(id)).filter((u): u is User => !!u) || [], [group, usersMap]);
+    const group = useMemo(() => service_groups.find((g: any) => g.id === service.service_group_id), [service_groups, service.service_group_id]);
+    const teachersInGroup = useMemo(() => group?.teacher_ids.map(id => usersMap.get(id)).filter((u): u is User => !!u) || [], [group, usersMap]);
 
     const handleRoleChange = (role: ServiceRole, userId: string) => {
         const updatedService = { ...service, roles: { ...service.roles, [role]: userId } };
         setServices(services.map(s => s.id === service.id ? updatedService : s));
     };
 
-    const handleAddRecipe = (recipeId: string) => {
-        if (service.menu.some(item => item.recipeId === recipeId)) return;
-        const updatedService = { ...service, menu: [...service.menu, { recipeId }] };
+    const handleAddRecipe = (recipe_id: string) => {
+        if (service.menu.some(item => item.recipe_id === recipe_id)) return;
+        const updatedService = { ...service, menu: [...service.menu, { recipe_id }] };
         setServices(services.map(s => s.id === service.id ? updatedService : s));
     };
 
-    const handleRemoveRecipe = (recipeId: string) => {
-        const updatedService = { ...service, menu: service.menu.filter(item => item.recipeId !== recipeId) };
+    const handleRemoveRecipe = (recipe_id: string) => {
+        const updatedService = { ...service, menu: service.menu.filter(item => item.recipe_id !== recipe_id) };
         setServices(services.map(s => s.id === service.id ? updatedService : s));
     };
 
@@ -46,11 +46,11 @@ const ServiceDetailView: React.FC<{ service: Service; onBack: () => void }> = ({
         doc.text(`Fecha: ${new Date(service.date).toLocaleDateString()}`, 14, 22);
 
         const body = service.menu.flatMap(item => {
-            const recipe = recipesMap.get(item.recipeId);
+            const recipe = recipesMap.get(item.recipe_id);
             if (!recipe) return [];
             const allergens = new Set<string>();
-            recipe.ingredients.forEach(ing => {
-                productsMap.get(ing.productId)?.allergens.forEach(a => allergens.add(a));
+            recipe.ingredients.forEach((ing: any) => {
+                productsMap.get(ing.product_id)?.allergens.forEach((a: string) => allergens.add(a));
             });
             return {
                 name: recipe.name,
@@ -68,20 +68,20 @@ const ServiceDetailView: React.FC<{ service: Service; onBack: () => void }> = ({
         doc.text(`Fecha: ${new Date(service.date).toLocaleDateString()}`, 14, 22);
 
         const body = service.menu.map(item => {
-            const r = recipesMap.get(item.recipeId);
+            const r = recipesMap.get(item.recipe_id);
             if (!r) return ['Receta no encontrada', '', '', '', '', '', ''];
             const allergens = new Set<string>();
-            r.ingredients.forEach(ing => {
-                productsMap.get(ing.productId)?.allergens.forEach(a => allergens.add(a));
+            r.ingredients.forEach((ing: any) => {
+                productsMap.get(ing.product_id)?.allergens.forEach((a: string) => allergens.add(a));
             });
             return [
                 r.name,
                 Array.from(allergens).join(', ') || '-',
                 r.presentation || '-',
-                `${r.temperature || '-'} / ${r.serviceTime || '-'}`,
-                r.recommendedMarking || '-',
-                r.serviceType || '-',
-                r.clientDescription || '-'
+                `${r.temperature || '-'} / ${r.service_time || '-'}`,
+                r.recommended_marking || '-',
+                r.service_type || '-',
+                r.client_description || '-'
             ];
         });
 
@@ -90,7 +90,7 @@ const ServiceDetailView: React.FC<{ service: Service; onBack: () => void }> = ({
     };
 
     const generateDraftOrder = () => {
-        const activeEvent = events.find(e => e.type === 'Regular' && new Date(e.endDate) > new Date());
+        const activeEvent = events.find(e => e.type === 'Regular' && new Date(e.end_date) > new Date());
         if (!activeEvent) {
             alert("No hay un evento de pedido 'Regular' activo para asociar el borrador.");
             return;
@@ -98,20 +98,20 @@ const ServiceDetailView: React.FC<{ service: Service; onBack: () => void }> = ({
 
         const aggregatedIngredients = new Map<string, number>();
         service.menu.forEach(item => {
-            const recipe = recipesMap.get(item.recipeId);
-            recipe?.ingredients.forEach(ing => {
-                aggregatedIngredients.set(ing.productId, (aggregatedIngredients.get(ing.productId) || 0) + ing.quantity);
+            const recipe = recipesMap.get(item.recipe_id);
+            recipe?.ingredients.forEach((ing: any) => {
+                aggregatedIngredients.set(ing.product_id, (aggregatedIngredients.get(ing.product_id) || 0) + ing.quantity);
             });
         });
 
         const newOrder: Order = {
             id: `ord-draft-${Date.now()}`,
-            userId: group?.teacherIds[0] || '', // Assign to first teacher in group
+            user_id: group?.teacher_ids[0] || '', // Assign to first teacher in group
             date: new Date().toISOString(),
             status: 'Borrador',
-            eventId: activeEvent.id,
-            items: Array.from(aggregatedIngredients.entries()).map(([productId, quantity]) => ({
-                productId, quantity, price: productsMap.get(productId)?.suppliers[0]?.price || 0, tax: productsMap.get(productId)?.tax || 0
+            event_id: activeEvent.id,
+            items: Array.from(aggregatedIngredients.entries()).map(([product_id, quantity]) => ({
+                product_id, quantity, price: productsMap.get(product_id)?.suppliers[0]?.price || 0, tax: productsMap.get(product_id)?.tax || 0
             })),
             notes: `Borrador generado automáticamente desde el servicio: ${service.name}`
         };
@@ -128,9 +128,9 @@ const ServiceDetailView: React.FC<{ service: Service; onBack: () => void }> = ({
                     <Card title="Menú del Servicio">
                         <button onClick={() => setIsRecipeModalOpen(true)} className="bg-blue-500 text-white px-3 py-1 rounded mb-4">Añadir Plato</button>
                         {service.menu.map(item => {
-                            const recipe = recipesMap.get(item.recipeId);
+                            const recipe = recipesMap.get(item.recipe_id);
                             if (!recipe) return null;
-                            return <div key={item.recipeId} className="flex justify-between items-center p-2 border-b dark:border-gray-600">{recipe.name}<button onClick={() => handleRemoveRecipe(item.recipeId)}><TrashIcon className="w-4 h-4 text-red-500"/></button></div>
+                            return <div key={item.recipe_id} className="flex justify-between items-center p-2 border-b dark:border-gray-600">{recipe.name}<button onClick={() => handleRemoveRecipe(item.recipe_id)}><TrashIcon className="w-4 h-4 text-red-500"/></button></div>
                         })}
                         {service.menu.length === 0 && <p className="text-gray-500">Aún no se han añadido platos al menú.</p>}
                     </Card>
@@ -151,7 +151,7 @@ const ServiceDetailView: React.FC<{ service: Service; onBack: () => void }> = ({
                                 <label className="text-sm font-semibold">{role}</label>
                                 <select value={service.roles[role] || ''} onChange={e => handleRoleChange(role, e.target.value)} className="w-full p-1 border rounded dark:bg-gray-700">
                                     <option value="">-- Sin Asignar --</option>
-                                    {teachersInGroup.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                    {teachersInGroup.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
                                 </select>
                             </div>
                         ))}
@@ -163,7 +163,7 @@ const ServiceDetailView: React.FC<{ service: Service; onBack: () => void }> = ({
     );
 };
 
-const RecipeSelectorModal: React.FC<{ recipes: Recipe[], onClose: () => void, onSelect: (recipeId: string) => void }> = ({ recipes, onClose, onSelect }) => {
+const RecipeSelectorModal: React.FC<{ recipes: Recipe[], onClose: () => void, onSelect: (recipe_id: string) => void }> = ({ recipes, onClose, onSelect }) => {
     return (
         <Modal isOpen={true} onClose={onClose} title="Seleccionar Receta">
             <div className="max-h-96 overflow-y-auto">
@@ -177,17 +177,17 @@ const RecipeSelectorModal: React.FC<{ recipes: Recipe[], onClose: () => void, on
 
 // --- LIST VIEW COMPONENT ---
 export const ServiceViewer: React.FC = () => {
-    const { services, serviceGroups } = useData();
+    const { services, service_groups } = useData();
     const { currentUser } = useAuth();
     const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
     
-    const selectedService = useMemo(() => services.find(s => s.id === selectedServiceId), [services, selectedServiceId]);
+    const selectedService = useMemo(() => services.find((s: any) => s.id === selectedServiceId), [services, selectedServiceId]);
 
     const myServices = useMemo(() => {
         if (!currentUser) return [];
-        const myGroupIds = new Set(serviceGroups.filter(g => g.teacherIds.includes(currentUser.id)).map(g => g.id));
-        return services.filter(s => myGroupIds.has(s.serviceGroupId));
-    }, [services, serviceGroups, currentUser]);
+        const myGroupIds = new Set(service_groups.filter((g: any) => g.teacher_ids.includes(currentUser.id)).map((g: any) => g.id));
+        return services.filter((s: any) => myGroupIds.has(s.service_group_id));
+    }, [services, service_groups, currentUser]);
 
     if (selectedService) {
         return <ServiceDetailView service={selectedService} onBack={() => setSelectedServiceId(null)} />;

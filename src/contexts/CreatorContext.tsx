@@ -14,7 +14,7 @@ const initialCreatorInfo: Creator = {
   logo: "https://avatars.githubusercontent.com/u/1?v=4", // Placeholder Octocat
   website: "mailto:managerproapp@gmail.com",
   copyright: `© ${new Date().getFullYear()} JCB. Todos los derechos reservados.`,
-  appName: "Manager Pro",
+  app_name: "Manager Pro",
 };
 
 export const CreatorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

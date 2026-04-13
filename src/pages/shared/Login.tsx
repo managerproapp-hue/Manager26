@@ -6,24 +6,16 @@ import { useCreator } from '../../contexts/CreatorContext';
 
 export const Login: React.FC = () => {
   console.log('Login component rendering');
-  const { login, changePassword, recoverMasterAccount, currentUser, selectedProfile } = useAuth();
+  const { loginWithGoogle, currentUser, selectedProfile } = useAuth();
   const { companyInfo } = useCompany();
   const { creatorInfo } = useCreator();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [mustChangePassword, setMustChangePassword] = useState(false);
-  const [isRecovering, setIsRecovering] = useState(false);
-  const [recoveryMessage, setRecoveryMessage] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     console.log('Login useEffect - currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
-    if (currentUser && !mustChangePassword) {
+    if (currentUser) {
       if (selectedProfile && currentUser.profiles.includes(selectedProfile)) {
         console.log('Redirecting to dashboard:', selectedProfile);
         navigate(`/${selectedProfile}/dashboard`);
@@ -32,256 +24,96 @@ export const Login: React.FC = () => {
         navigate('/select-profile');
       }
     }
-  }, [currentUser, selectedProfile, navigate, mustChangePassword]);
-
-  const handleRecover = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setRecoveryMessage('');
-    setIsLoading(true);
-    
-    const result = await recoverMasterAccount(email, phone);
-    if (result.success) {
-      setRecoveryMessage(result.message);
-      setIsRecovering(false);
-    } else {
-      setError(result.message);
-    }
-    setIsLoading(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-    
-    if (mustChangePassword) {
-      if (newPassword !== confirmPassword) {
-        setError('Las contraseñas no coinciden.');
-        setIsLoading(false);
-        return;
-      }
-      if (newPassword.length < 6) {
-        setError('La contraseña debe tener al menos 6 caracteres.');
-        setIsLoading(false);
-        return;
-      }
-      const success = await changePassword(newPassword);
-      if (success) {
-        setMustChangePassword(false);
-      } else {
-        setError('Error al cambiar la contraseña. Inténtalo de nuevo.');
-      }
-    } else {
-      const result = await login(email, password);
-      if (result.success) {
-        if (result.mustChangePassword) {
-          setMustChangePassword(true);
-        }
-      } else {
-        setError('Email o contraseña incorrectos.');
-      }
-    }
-    setIsLoading(false);
-  };
+  }, [currentUser, selectedProfile, navigate]);
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-200 dark:bg-gray-900">
+    <div className="flex items-center justify-center min-h-screen bg-gray-200 dark:bg-gray-900 p-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-        <div className="flex justify-center mb-6">
-          <img src={companyInfo.logo} alt="Logotipo de la Empresa" className="h-12 w-auto" />
+        <div className="flex justify-center items-center space-x-8 mb-6">
+          {creatorInfo.logo && (
+            <img src={creatorInfo.logo} alt="Logotipo de Manager Pro" className="h-16 w-auto object-contain" />
+          )}
+          {companyInfo.logo && (
+            <img src={companyInfo.logo} alt="Logotipo del IES La Flota" className="h-16 w-auto object-contain" />
+          )}
         </div>
-        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
-          {isRecovering ? 'Recuperar Acceso' : (mustChangePassword ? 'Cambiar Contraseña' : `Bienvenido a ${companyInfo.name}`)}
+        
+        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-2">
+          Bienvenido a {companyInfo.name}
         </h2>
+        <p className="text-center text-gray-600 dark:text-gray-300 mb-8">
+          Web para la gestión de almacén de la Escuela de Hostelería del IES La Flota
+        </p>
         
-        {recoveryMessage && (
-          <div className="mt-4 p-3 bg-green-100 text-green-700 text-sm rounded-md text-center">
-            {recoveryMessage}
-          </div>
+        {error && (
+          <div className="mb-4 text-red-500 text-sm text-center font-medium">{error}</div>
         )}
-        
-        {mustChangePassword && (
-          <p className="mt-2 text-sm text-center text-gray-600 dark:text-gray-400">
-            Debes cambiar tu contraseña temporal antes de continuar.
-          </p>
-        )}
-        
-        <form className="mt-8 space-y-6" onSubmit={isRecovering ? handleRecover : handleSubmit}>
-          {isRecovering ? (
-            <>
-              <div>
-                <label htmlFor="recover-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Correo Electrónico Master
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="recover-email"
-                    name="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="recover-phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Número de Teléfono de Recuperación
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="recover-phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-            </>
-          ) : !mustChangePassword ? (
-            <>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Correo Electrónico
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Contraseña
-                  </label>
-                  {email === 'managerproapp@gmail.com' && (
-                    <button
-                      type="button"
-                      onClick={() => setIsRecovering(true)}
-                      className="text-xs text-primary-600 hover:text-primary-500"
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  )}
-                </div>
-                <div className="mt-1">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+        <div className="space-y-6">
+          <button
+            type="button"
+            onClick={async () => {
+              setIsLoading(true);
+              const success = await loginWithGoogle();
+              if (!success) {
+                setError('Error al iniciar sesión con Google.');
+              }
+              setIsLoading(false);
+            }}
+            disabled={isLoading}
+            className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+          >
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600 dark:border-white"></div>
+            ) : (
+              <>
+                <svg className="h-5 w-5 mr-3" aria-hidden="true" viewBox="0 0 24 24">
+                  <path
+                    d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z"
+                    fill="#EA4335"
                   />
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Nueva Contraseña
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="newPassword"
-                    name="newPassword"
-                    type="password"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  <path
+                    d="M23.49 12.275C23.49 11.49 23.415 10.73 23.3 10H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.945 21.1C22.2 19.01 23.49 15.92 23.49 12.275Z"
+                    fill="#4285F4"
                   />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Confirmar Nueva Contraseña
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md shadow-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  <path
+                    d="M5.26498 14.2949C5.02498 13.5699 4.88501 12.7999 4.88501 11.9999C4.88501 11.1999 5.01998 10.4299 5.26498 9.7049L1.275 6.60986C0.46 8.22986 0 10.0599 0 11.9999C0 13.9399 0.46 15.7699 1.28 17.3899L5.26498 14.2949Z"
+                    fill="#FBBC05"
                   />
-                </div>
-              </div>
-            </>
-          )}
-          
-          {error && (
-            <div className="text-red-500 text-sm text-center font-medium">{error}</div>
-          )}
-
-          <div className="space-y-3">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-primary-400 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                isRecovering ? 'Recuperar Contraseña' : (mustChangePassword ? 'Actualizar Contraseña' : 'Iniciar Sesión')
-              )}
-            </button>
-
-            {isRecovering && (
-              <button
-                type="button"
-                onClick={() => setIsRecovering(false)}
-                className="w-full text-center text-sm text-gray-600 hover:text-gray-500"
-              >
-                Volver al inicio de sesión
-              </button>
+                  <path
+                    d="M12.0004 24.0001C15.2404 24.0001 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.26538 14.29L1.27539 17.385C3.25539 21.31 7.3104 24.0001 12.0004 24.0001Z"
+                    fill="#34A853"
+                  />
+                </svg>
+                Continuar con Google
+              </>
             )}
+          </button>
 
-            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={async () => {
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  if ('serviceWorker' in navigator) {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    for (const registration of registrations) {
-                      await registration.unregister();
-                    }
+          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={async () => {
+                localStorage.clear();
+                sessionStorage.clear();
+                if ('serviceWorker' in navigator) {
+                  const registrations = await navigator.serviceWorker.getRegistrations();
+                  for (const registration of registrations) {
+                    await registration.unregister();
                   }
-                  const databases = await window.indexedDB.databases();
-                  for (const db of databases) {
-                    if (db.name) window.indexedDB.deleteDatabase(db.name);
-                  }
-                  window.location.reload();
-                }}
-                className="w-full text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
-              >
-                ¿Problemas al entrar? Limpieza profunda y reiniciar
-              </button>
-            </div>
+                }
+                const databases = await window.indexedDB.databases();
+                for (const db of databases) {
+                  if (db.name) window.indexedDB.deleteDatabase(db.name);
+                }
+                window.location.reload();
+              }}
+              className="w-full text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+            >
+              ¿Problemas al entrar? Limpieza profunda y reiniciar
+            </button>
           </div>
-        </form>
+        </div>
         
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500">
              <p>{creatorInfo.copyright}</p>

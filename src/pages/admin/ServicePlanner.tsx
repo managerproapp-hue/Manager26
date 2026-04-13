@@ -9,27 +9,27 @@ const SERVICE_ROLES: ServiceRole[] = ['Cocina', 'Postres', 'Servicios (Sala)', '
 
 // --- SERVICE GROUP MANAGEMENT ---
 const ServiceGroupManager: React.FC = () => {
-    const { serviceGroups, setServiceGroups, users, services, setServices } = useData();
+    const { service_groups, setServiceGroups, users, services, setServices } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState<ServiceGroup | null>(null);
 
-    const teachers = useMemo(() => users.filter(u => u.profiles.includes(Profile.TEACHER)), [users]);
-    const usersMap = useMemo(() => new Map(users.map(u => [u.id, u.name])), [users]);
+    const teachers = useMemo(() => users.filter((u: User) => u.profiles.includes(Profile.TEACHER)), [users]);
+    const usersMap = useMemo(() => new Map(users.map((u: User) => [u.id, u.name])), [users]);
 
     const handleSave = (groupData: Partial<ServiceGroup>) => {
         if (selectedGroup) {
-            setServiceGroups(serviceGroups.map(g => g.id === selectedGroup.id ? { ...g, ...groupData } as ServiceGroup : g));
+            setServiceGroups(service_groups.map((g: ServiceGroup) => g.id === selectedGroup.id ? { ...g, ...groupData } as ServiceGroup : g));
         } else {
-            const newGroup: ServiceGroup = { id: `sg-${Date.now()}`, name: groupData.name!, teacherIds: groupData.teacherIds!, roles: groupData.roles || {} };
-            setServiceGroups([...serviceGroups, newGroup]);
+            const newGroup: ServiceGroup = { id: `sg-${Date.now()}`, name: groupData.name!, teacher_ids: groupData.teacher_ids!, roles: groupData.roles || {} };
+            setServiceGroups([...service_groups, newGroup]);
         }
         setIsModalOpen(false);
     };
 
     const handleDelete = (groupId: string) => {
         if (window.confirm("¿Seguro que quieres eliminar este grupo? También se eliminarán los servicios asociados.")) {
-            setServices(services.filter(s => s.serviceGroupId !== groupId));
-            setServiceGroups(serviceGroups.filter(g => g.id !== groupId));
+            setServices(services.filter((s: Service) => s.service_group_id !== groupId));
+            setServiceGroups(service_groups.filter((g: ServiceGroup) => g.id !== groupId));
         }
     };
 
@@ -39,7 +39,7 @@ const ServiceGroupManager: React.FC = () => {
                 <button onClick={() => { setSelectedGroup(null); setIsModalOpen(true); }} className="bg-blue-500 text-white py-2 px-4 rounded-md flex items-center"><PlusIcon className="w-5 h-5 mr-1" /> Nuevo Grupo</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {serviceGroups.map(group => (
+                {service_groups.map((group: ServiceGroup) => (
                     <div key={group.id} className="p-4 border rounded-lg dark:border-gray-600">
                         <div className="flex justify-between items-start">
                             <h3 className="font-bold">{group.name}</h3>
@@ -50,12 +50,12 @@ const ServiceGroupManager: React.FC = () => {
                         </div>
                         <p className="text-sm font-semibold mt-2">Miembros:</p>
                         <ul className="text-sm list-disc list-inside">
-                            {group.teacherIds.map(id => <li key={id}>{usersMap.get(id) || 'Desconocido'}</li>)}
+                            {group.teacher_ids.map((id: string) => <li key={id}>{usersMap.get(id) || 'Desconocido'}</li>)}
                         </ul>
                          <p className="text-sm font-semibold mt-2">Roles:</p>
                         <ul className="text-xs">
-                            {SERVICE_ROLES.map(role => (
-                                <li key={role}><strong>{role}:</strong> {group.roles?.[role]?.map(id => usersMap.get(id)).join(', ') || 'N/A'}</li>
+                            {SERVICE_ROLES.map((role: ServiceRole) => (
+                                <li key={role}><strong>{role}:</strong> {group.roles?.[role]?.map((id: string) => usersMap.get(id)).join(', ') || 'N/A'}</li>
                             ))}
                         </ul>
                     </div>
@@ -68,10 +68,10 @@ const ServiceGroupManager: React.FC = () => {
 
 const ServiceGroupFormModal: React.FC<{ group: ServiceGroup | null; teachers: User[]; onClose: () => void; onSave: (data: Partial<ServiceGroup>) => void; }> = ({ group, teachers, onClose, onSave }) => {
     const [name, setName] = useState(group?.name || '');
-    const [teacherIds, setTeacherIds] = useState<string[]>(group?.teacherIds || []);
+    const [teacher_ids, setTeacherIds] = useState<string[]>(group?.teacher_ids || []);
     const [roles, setRoles] = useState<Partial<Record<ServiceRole, string[]>>>(group?.roles || {});
     
-    const teachersInGroup = useMemo(() => teachers.filter(t => teacherIds.includes(t.id)), [teachers, teacherIds]);
+    const teachersInGroup = useMemo(() => teachers.filter(t => teacher_ids.includes(t.id)), [teachers, teacher_ids]);
 
     const handleTeacherSelectionChange = (id: string) => {
         setTeacherIds(prev => {
@@ -100,7 +100,7 @@ const ServiceGroupFormModal: React.FC<{ group: ServiceGroup | null; teachers: Us
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, teacherIds, roles });
+        onSave({ name, teacher_ids, roles });
     };
 
     return (
@@ -113,7 +113,7 @@ const ServiceGroupFormModal: React.FC<{ group: ServiceGroup | null; teachers: Us
                     <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto p-2 border rounded dark:border-gray-600">
                         {teachers.map(t => (
                             <label key={t.id} className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
-                                <input type="checkbox" checked={teacherIds.includes(t.id)} onChange={() => handleTeacherSelectionChange(t.id)} className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                <input type="checkbox" checked={teacher_ids.includes(t.id)} onChange={() => handleTeacherSelectionChange(t.id)} className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
                                 <span>{t.name}</span>
                             </label>
                         ))}
@@ -152,17 +152,17 @@ const ServiceGroupFormModal: React.FC<{ group: ServiceGroup | null; teachers: Us
 
 // --- SERVICE MANAGEMENT ---
 const ServiceManager: React.FC = () => {
-    const { services, setServices, serviceGroups } = useData();
+    const { services, setServices, service_groups } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedService, setSelectedService] = useState<Service | null>(null);
 
-    const serviceGroupsMap = useMemo(() => new Map(serviceGroups.map(g => [g.id, g.name])), [serviceGroups]);
+    const serviceGroupsMap = useMemo(() => new Map(service_groups.map((g: ServiceGroup) => [g.id, g.name])), [service_groups]);
 
     const handleSave = (serviceData: Partial<Service>) => {
         if (selectedService) {
-            setServices(services.map(s => s.id === selectedService.id ? { ...s, ...serviceData } as Service : s));
+            setServices(services.map((s: Service) => s.id === selectedService.id ? { ...s, ...serviceData } as Service : s));
         } else {
-            const newService: Service = { id: `svc-${Date.now()}`, name: serviceData.name!, date: serviceData.date!, serviceGroupId: serviceData.serviceGroupId!, menu: [], roles: {}, status: 'Planificación' };
+            const newService: Service = { id: `svc-${Date.now()}`, name: serviceData.name!, date: serviceData.date!, service_group_id: serviceData.service_group_id!, menu: [], roles: {}, status: 'Planificación' };
             setServices([...services, newService]);
         }
         setIsModalOpen(false);
@@ -170,7 +170,7 @@ const ServiceManager: React.FC = () => {
 
     const handleDelete = (serviceId: string) => {
         if (window.confirm("¿Seguro que quieres eliminar este servicio?")) {
-            setServices(services.filter(s => s.id !== serviceId));
+            setServices(services.filter((s: Service) => s.id !== serviceId));
         }
     };
 
@@ -182,11 +182,11 @@ const ServiceManager: React.FC = () => {
             <table className="w-full text-sm">
                 <thead><tr><th className="text-left p-2">Nombre</th><th className="text-left p-2">Fecha</th><th className="text-left p-2">Grupo Asignado</th><th className="text-left p-2">Acciones</th></tr></thead>
                 <tbody>
-                    {services.map(service => (
+                    {services.map((service: Service) => (
                         <tr key={service.id} className="border-t">
                             <td className="p-2">{service.name}</td>
                             <td className="p-2">{new Date(service.date).toLocaleDateString()}</td>
-                            <td className="p-2">{serviceGroupsMap.get(service.serviceGroupId) || 'N/A'}</td>
+                            <td className="p-2">{serviceGroupsMap.get(service.service_group_id) || 'N/A'}</td>
                             <td className="p-2 space-x-2">
                                 <button onClick={() => { setSelectedService(service); setIsModalOpen(true); }}><PencilIcon className="w-4 h-4 text-gray-500"/></button>
                                 <button onClick={() => handleDelete(service.id)}><TrashIcon className="w-4 h-4 text-red-500"/></button>
@@ -195,7 +195,7 @@ const ServiceManager: React.FC = () => {
                     ))}
                 </tbody>
             </table>
-            {isModalOpen && <ServiceFormModal service={selectedService} serviceGroups={serviceGroups} onClose={() => setIsModalOpen(false)} onSave={handleSave} />}
+            {isModalOpen && <ServiceFormModal service={selectedService} serviceGroups={service_groups} onClose={() => setIsModalOpen(false)} onSave={handleSave} />}
         </div>
     );
 };
@@ -204,7 +204,7 @@ const ServiceFormModal: React.FC<{ service: Service | null; serviceGroups: Servi
     const [formState, setFormState] = useState({
         name: service?.name || '',
         date: service ? new Date(service.date).toISOString().substring(0, 10) : '',
-        serviceGroupId: service?.serviceGroupId || '',
+        service_group_id: service?.service_group_id || '',
     });
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setFormState({...formState, [e.target.name]: e.target.value});
     const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave({ ...formState, date: new Date(formState.date).toISOString() }); };
@@ -214,7 +214,7 @@ const ServiceFormModal: React.FC<{ service: Service | null; serviceGroups: Servi
             <form onSubmit={handleSubmit} className="space-y-4">
                 <input type="text" name="name" value={formState.name} onChange={handleChange} placeholder="Nombre del Servicio" required className="w-full p-2 border rounded"/>
                 <input type="date" name="date" value={formState.date} onChange={handleChange} required className="w-full p-2 border rounded"/>
-                <select name="serviceGroupId" value={formState.serviceGroupId} onChange={handleChange} required className="w-full p-2 border rounded">
+                <select name="service_group_id" value={formState.service_group_id} onChange={handleChange} required className="w-full p-2 border rounded">
                     <option value="">-- Asignar Grupo --</option>
                     {serviceGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>

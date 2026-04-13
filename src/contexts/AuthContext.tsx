@@ -24,6 +24,7 @@ interface AuthContextType {
   signUp: (email: string, password?: string) => Promise<boolean>;
   changePassword: (newPassword: string) => Promise<boolean>;
   recoverMasterAccount: (email: string, phone: string) => Promise<{ success: boolean; message: string }>;
+  loginWithGoogle: () => Promise<boolean>;
   logout: () => void;
   selectProfile: (profile: Profile) => void;
   impersonateUser: (user: User) => void;
@@ -80,8 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             profiles: SUPER_USER_EMAILS.includes(userEmail) 
               ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
               : [Profile.STUDENT],
-            activityStatus: 'Activo',
-            locationStatus: 'En el centro',
+            activity_status: 'Activo',
+            location_status: 'En el centro',
             avatar: session.user.user_metadata.avatar_url || `https://i.pravatar.cc/150?u=${session.user.id}`
           };
           setCurrentUser(newUser);
@@ -124,13 +125,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Check if user exists in our 'users' table and if they must change password
           const { data: userData } = await supabase
             .from('users')
-            .select('mustChangePassword')
+            .select('must_change_password')
             .eq('id', data.user.id)
             .single();
 
           return { 
             success: true, 
-            mustChangePassword: userData?.mustChangePassword || false 
+            mustChangePassword: userData?.must_change_password || false 
           };
         }
         
@@ -150,8 +151,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: 'managerproapp@gmail.com',
           name: 'Master User (Bypass)',
           profiles: [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT],
-          activityStatus: 'Activo',
-          locationStatus: 'En el centro',
+          activity_status: 'Activo',
+          location_status: 'En el centro',
           avatar: 'https://i.pravatar.cc/150?u=master'
         };
         setCurrentUser(masterUser);
@@ -189,7 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (authError) throw authError;
 
       // Update our user record
-      await updateCurrentUser({ mustChangePassword: false });
+      await updateCurrentUser({ must_change_password: false });
       
       return true;
     } catch (error) {
@@ -230,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://ais-dev-e2mvrmbrwt3dsxzy4pcfvg-647454433844.europe-west2.run.app/login'
+          redirectTo: window.location.origin
         }
       });
       
@@ -295,8 +296,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const updatedUser = {...currentUser, ...userData};
         
         // Update Supabase
-        const { error } = await supabase.from('users').upsert(updatedUser);
-        if (error) console.error('Error updating user in Supabase:', error);
+        try {
+            const { error } = await supabase.from('users').upsert(updatedUser);
+            if (error) console.error('Error updating user in Supabase:', error);
+        } catch (err) {
+            console.error('Failed to update user in Supabase:', err);
+        }
         
         // Keep Firebase sync for now if needed
         try {
@@ -322,6 +327,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signUp,
       changePassword,
       recoverMasterAccount,
+      loginWithGoogle,
       logout,
       selectProfile,
       impersonateUser,

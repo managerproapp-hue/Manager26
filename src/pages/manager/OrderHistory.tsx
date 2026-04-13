@@ -18,15 +18,15 @@ export const OrderHistory: React.FC = () => {
     const filteredOrders = useMemo(() => {
         return orders
             .filter(o => filterStatus === 'Todos' || o.status === filterStatus)
-            .filter(o => filterTeacher === 'Todos' || o.userId === filterTeacher)
+            .filter(o => filterTeacher === 'Todos' || o.user_id === filterTeacher)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [orders, filterStatus, filterTeacher]);
 
     const handleExport = () => {
         const dataToExport = filteredOrders.map(o => ({
             fecha: new Date(o.date).toLocaleString(),
-            profesor: usersMap.get(o.userId) || 'N/A',
-            evento: eventsMap.get(o.eventId) || 'N/A',
+            profesor: usersMap.get(o.user_id) || 'N/A',
+            evento: eventsMap.get(o.event_id) || 'N/A',
             estado: o.status,
             coste: o.cost?.toFixed(2) + '€',
             notas: o.notes
@@ -79,8 +79,8 @@ export const OrderHistory: React.FC = () => {
                             {filteredOrders.map(order => (
                                 <tr key={order.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td className="px-4 py-2">{new Date(order.date).toLocaleDateString()}</td>
-                                    <td className="px-4 py-2">{usersMap.get(order.userId)}</td>
-                                    <td className="px-4 py-2">{eventsMap.get(order.eventId)}</td>
+                                    <td className="px-4 py-2">{usersMap.get(order.user_id)}</td>
+                                    <td className="px-4 py-2">{eventsMap.get(order.event_id)}</td>
                                     <td className="px-4 py-2">{order.status}</td>
                                     <td className="px-4 py-2 text-right font-mono">{order.cost?.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
                                 </tr>

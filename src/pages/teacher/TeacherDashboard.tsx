@@ -15,10 +15,10 @@ export const TeacherDashboard: React.FC = () => {
     const basePath = isStudent ? '/student' : '/teacher';
 
     const now = new Date();
-    const activeEvents = events.filter(e => new Date(e.startDate) <= now && new Date(e.endDate) >= now);
+    const activeEvents = events.filter(e => new Date(e.start_date) <= now && new Date(e.end_date) >= now);
     
     const myRecentOrders = orders
-        .filter(o => o.userId === currentUser?.id)
+        .filter(o => o.user_id === currentUser?.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 3);
     
@@ -43,7 +43,7 @@ export const TeacherDashboard: React.FC = () => {
                                     <li key={event.id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex justify-between items-center">
                                         <div>
                                             <p className="font-semibold">{event.name}</p>
-                                            <p className="text-sm text-gray-500">Finaliza el {new Date(event.endDate).toLocaleDateString()}</p>
+                                            <p className="text-sm text-gray-500">Finaliza el {new Date(event.end_date).toLocaleDateString()}</p>
                                         </div>
                                         <Link to={`${basePath}/order-portal/new/${event.id}`} className="bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 no-print">
                                             Realizar Pedido
@@ -60,7 +60,7 @@ export const TeacherDashboard: React.FC = () => {
                              <ul className="space-y-2">
                                 {myRecentOrders.map(order => (
                                     <li key={order.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-md flex justify-between">
-                                        <span>Pedido para <strong>{eventsMap.get(order.eventId) || 'Evento desconocido'}</strong></span>
+                                        <span>Pedido para <strong>{eventsMap.get(order.event_id) || 'Evento desconocido'}</strong></span>
                                         <span className="font-mono">{order.cost?.toFixed(2)}€</span>
                                     </li>
                                 ))}

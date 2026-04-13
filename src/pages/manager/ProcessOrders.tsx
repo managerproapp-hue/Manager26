@@ -11,7 +11,7 @@ import { useCreator } from '../../contexts/CreatorContext';
 
 type AggregatedProduct = {
     product: Product;
-    totalQuantity: number;
+    total_quantity: number;
     orders: { order: Order; item: OrderItem }[];
 }
 
@@ -27,10 +27,10 @@ export const ProcessOrders: React.FC = () => {
             const eventStatusMap = new Map<string, { orderCount: number; status: 'Procesado' | 'Enviado' }>();
             orders.forEach(o => {
                 if (o.status === 'Enviado' || o.status === 'Procesado') {
-                    if (!eventStatusMap.has(o.eventId)) {
-                        eventStatusMap.set(o.eventId, { orderCount: 0, status: 'Enviado' });
+                    if (!eventStatusMap.has(o.event_id)) {
+                        eventStatusMap.set(o.event_id, { orderCount: 0, status: 'Enviado' });
                     }
-                    const info = eventStatusMap.get(o.eventId)!;
+                    const info = eventStatusMap.get(o.event_id)!;
                     info.orderCount++;
                     if (o.status === 'Procesado') info.status = 'Procesado';
                 }
@@ -46,7 +46,7 @@ export const ProcessOrders: React.FC = () => {
                  <Card title="Selecciona un Evento para Procesar">
                      <div className="space-y-3">
                         {processableEvents.length > 0 ? processableEvents.map(e => {
-                            const isEventOpen = new Date(e.startDate) <= now && new Date(e.endDate) >= now;
+                            const isEventOpen = new Date(e.start_date) <= now && new Date(e.end_date) >= now;
                             return (
                             <Link to={`/almacen/process-orders/${e.id}`} key={e.id} className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <div className="flex justify-between items-center">
@@ -91,10 +91,10 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
     const suppliersMap = useMemo(() => new Map(suppliers.map(s => [s.id, s])), [suppliers]);
     const usersMap = useMemo(() => new Map(users.map(u => [u.id, u.name])), [users]);
-    const managerUser = useMemo(() => users.find(u => u.id === companyInfo.managerUserId), [users, companyInfo]);
+    const managerUser = useMemo(() => users.find(u => u.id === companyInfo.manager_user_id), [users, companyInfo]);
     
     const event = useMemo(() => events.find(e => e.id === eventId), [events, eventId]);
-    const eventOrders = useMemo(() => orders.filter(o => o.eventId === eventId && (o.status === 'Enviado' || o.status === 'Procesado')), [orders, eventId]);
+    const eventOrders = useMemo(() => orders.filter(o => o.event_id === eventId && (o.status === 'Enviado' || o.status === 'Procesado')), [orders, eventId]);
     const isProcessed = useMemo(() => eventOrders.length > 0 && eventOrders.every(o => o.status === 'Procesado'), [eventOrders]);
 
     const { aggregatedProducts, newProductRequests } = useMemo(() => {
@@ -103,18 +103,18 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
 
         for (const order of eventOrders) {
             for (const item of order.items) {
-                const product = productsMap.get(item.productId);
+                const product = productsMap.get(item.product_id);
                 if (!product || product.status === 'Inactivo') continue;
 
                 if (!productMap.has(product.id)) {
-                    productMap.set(product.id, { product, totalQuantity: 0, orders: [] });
+                    productMap.set(product.id, { product, total_quantity: 0, orders: [] });
                 }
                 const agg = productMap.get(product.id)!;
-                agg.totalQuantity += item.quantity;
+                agg.total_quantity += item.quantity;
                 agg.orders.push({ order, item });
             }
-            if (order.newProductRequests) {
-                requests.push(...order.newProductRequests.map(r => ({...r, teacherName: usersMap.get(order.userId) || 'Desconocido' })));
+            if (order.new_product_requests) {
+                requests.push(...order.new_product_requests.map(r => ({...r, teacherName: usersMap.get(order.user_id) || 'Desconocido' })));
             }
         }
         return { aggregatedProducts: Array.from(productMap.values()), newProductRequests: requests };
@@ -124,11 +124,11 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
         const initialSuppliers: Record<string, string> = {};
         aggregatedProducts.forEach(({ product }) => {
             const cheapestSupplier = product.suppliers
-                .map(ps => ({ ...ps, supplier: suppliersMap.get(ps.supplierId) }))
+                .map(ps => ({ ...ps, supplier: suppliersMap.get(ps.supplier_id) }))
                 .filter(ps => ps.supplier?.status === 'Activo')
                 .sort((a, b) => a.price - b.price)[0];
             if (cheapestSupplier) {
-                initialSuppliers[product.id] = cheapestSupplier.supplierId;
+                initialSuppliers[product.id] = cheapestSupplier.supplier_id;
             }
         });
         setSelectedSuppliers(initialSuppliers);
@@ -159,7 +159,7 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
             }
 
             const totalQuantity = agg.orders.reduce((sum, detail) => sum + (editedQuantities[`${detail.order.id}-${agg.product.id}`] ?? detail.item.quantity), 0);
-            const priceInfo = agg.product.suppliers.find(s => s.supplierId === supplierId);
+            const priceInfo = agg.product.suppliers.find(s => s.supplier_id === supplierId);
             const cost = totalQuantity * (priceInfo?.price || 0);
 
             const entry = summary.get(supplierId)!;
@@ -176,18 +176,18 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                 .filter(agg => selectedSuppliers[agg.product.id] === supplier.id)
                 .map(agg => {
                     const totalQuantity = agg.orders.reduce((sum, detail) => sum + (editedQuantities[`${detail.order.id}-${agg.product.id}`] ?? detail.item.quantity), 0);
-                    const priceInfo = agg.product.suppliers.find(s => s.supplierId === supplier.id);
+                    const priceInfo = agg.product.suppliers.find(s => s.supplier_id === supplier.id);
                     return { product: agg.product, quantity: totalQuantity, price: priceInfo?.price || 0 };
                 });
             ordersBySupplier.set(supplier.id, itemsForSupplier);
         });
-        generateOrderPdf(ordersBySupplier, suppliersMap, companyInfo, managerUser, creatorInfo.appName);
+        generateOrderPdf(ordersBySupplier, suppliersMap, companyInfo, managerUser, creatorInfo.app_name);
     };
 
     const handleModifyOrders = () => {
         if (window.confirm("¿Seguro que quieres revertir este evento a 'Enviado'? Podrás volver a editar los pedidos de los profesores.")) {
              const newOrders = orders.map(order => {
-                if (order.eventId === eventId && order.status === 'Procesado') {
+                if (order.event_id === eventId && order.status === 'Procesado') {
                     return { ...order, status: 'Enviado' as OrderStatus };
                 }
                 return order;
@@ -206,14 +206,14 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                     const originalOrder = eventOrders.find(o => o.id === order.id)!;
 
                     const updatedItems = order.items.map(item => {
-                        const editedQty = editedQuantities[`${order.id}-${item.productId}`];
+                        const editedQty = editedQuantities[`${order.id}-${item.product_id}`];
                         return editedQty !== undefined ? { ...item, quantity: editedQty } : item;
                     }).filter(item => item.quantity > 0);
 
                     const updatedCost = updatedItems.reduce((sum, item) => {
-                        const product = productsMap.get(item.productId);
+                        const product = productsMap.get(item.product_id);
                         if (!product) return sum;
-                        const priceInfo = product.suppliers.find(s => s.supplierId === selectedSuppliers[product.id]);
+                        const priceInfo = product.suppliers.find(s => s.supplier_id === selectedSuppliers[product.id]);
                         const price = priceInfo?.price || item.price;
                         return sum + (item.quantity * price * (1 + item.tax / 100));
                     }, 0);
@@ -221,14 +221,14 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                     // Generate automatic message if changes were made
                     let itemChanges: string[] = [];
                     updatedItems.forEach(updatedItem => {
-                        const originalItem = originalOrder.items.find(i => i.productId === updatedItem.productId);
+                        const originalItem = originalOrder.items.find(i => i.product_id === updatedItem.product_id);
                         if (originalItem && originalItem.quantity !== updatedItem.quantity) {
-                            itemChanges.push(`- ${productsMap.get(updatedItem.productId)?.name}: Cantidad cambiada de ${originalItem.quantity} a ${updatedItem.quantity}.`);
+                            itemChanges.push(`- ${productsMap.get(updatedItem.product_id)?.name}: Cantidad cambiada de ${originalItem.quantity} a ${updatedItem.quantity}.`);
                         }
                     });
                     originalOrder.items.forEach(originalItem => {
-                        if (!updatedItems.some(i => i.productId === originalItem.productId)) {
-                            itemChanges.push(`- ${productsMap.get(originalItem.productId)?.name}: Eliminado del pedido.`);
+                        if (!updatedItems.some(i => i.product_id === originalItem.product_id)) {
+                            itemChanges.push(`- ${productsMap.get(originalItem.product_id)?.name}: Eliminado del pedido.`);
                         }
                     });
 
@@ -236,12 +236,12 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                         let changesDescription = `Tu pedido para "${event?.name}" ha sido procesado por ${currentUser?.name}.\n\nSe han realizado los siguientes ajustes:\n${itemChanges.join('\n')}`;
                         newMessages.push({
                             id: `msg-sys-${Date.now()}-${order.id}`,
-                            senderId: currentUser!.id,
-                            recipientIds: [order.userId],
+                            sender_id: currentUser!.id,
+                            recipient_ids: [order.user_id],
                             subject: `Actualización de tu pedido para el evento "${event?.name}"`,
                             body: changesDescription,
                             date: new Date().toISOString(),
-                            readBy: {},
+                            read_by: {},
                         });
                     }
 
@@ -280,7 +280,7 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                         {aggregatedProducts.map(({ product, orders: orderDetails }) => {
                             const totalQuantity = orderDetails.reduce((sum, detail) => sum + (editedQuantities[`${detail.order.id}-${product.id}`] ?? detail.item.quantity), 0);
                             const selectedSupId = selectedSuppliers[product.id];
-                            const price = product.suppliers.find(s => s.supplierId === selectedSupId)?.price || 0;
+                            const price = product.suppliers.find(s => s.supplier_id === selectedSupId)?.price || 0;
                             const totalCost = totalQuantity * price;
                             const isExpanded = expandedProducts.has(product.id);
                              return (
@@ -290,7 +290,7 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                                     <td className="p-2 text-center">{totalQuantity} {product.unit}</td>
                                     <td className="p-2">
                                         <select value={selectedSupId || ''} disabled={isProcessed} onChange={(e) => setSelectedSuppliers({...selectedSuppliers, [product.id]: e.target.value})} className="w-full p-1 border rounded dark:bg-gray-800">
-                                            {product.suppliers.map(ps => suppliersMap.get(ps.supplierId)).filter(s => s?.status === 'Activo').map(s => s && <option key={s.id} value={s.id}>{s.name} ({product.suppliers.find(ps => ps.supplierId === s.id)?.price.toFixed(2)}€)</option>)}
+                                            {product.suppliers.map(ps => suppliersMap.get(ps.supplier_id)).filter(s => s?.status === 'Activo').map(s => s && <option key={s.id} value={s.id}>{s.name} ({product.suppliers.find(ps => ps.supplier_id === s.id)?.price.toFixed(2)}€)</option>)}
                                         </select>
                                     </td>
                                     <td className="p-2 text-center">{totalCost.toFixed(2)}€</td>
@@ -302,8 +302,8 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                                             <h4 className="font-bold mb-2">Desglose para {product.name}</h4>
                                             {orderDetails.map(({ order, item }) => (
                                                 <div key={order.id} className="grid grid-cols-3 gap-2 items-center text-xs mb-1">
-                                                    <span>{usersMap.get(order.userId)}:</span>
-                                                    <input type="number" step="0.01" disabled={isProcessed} value={editedQuantities[`${order.id}-${item.productId}`] ?? item.quantity} onChange={e => handleQuantityChange(order.id, item.productId, parseFloat(e.target.value) || 0)} className="w-20 p-1 border rounded dark:bg-gray-800"/>
+                                                    <span>{usersMap.get(order.user_id)}:</span>
+                                                    <input type="number" step="0.01" disabled={isProcessed} value={editedQuantities[`${order.id}-${item.product_id}`] ?? item.quantity} onChange={e => handleQuantityChange(order.id, item.product_id, parseFloat(e.target.value) || 0)} className="w-20 p-1 border rounded dark:bg-gray-800"/>
                                                     <em className="text-gray-500 truncate" title={order.notes}>"{order.notes}"</em>
                                                 </div>
                                             ))}
@@ -311,7 +311,7 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                                     </tr>
                                 )}
                                 </React.Fragment>
-                            );
+                             );
                         })}
                     </tbody>
                 </table>
@@ -322,7 +322,7 @@ const EventProcessingDetail: React.FC<{ eventId: string }> = ({ eventId }) => {
                 <Card title="Solicitudes de Nuevos Productos" className="mt-6 border-yellow-400">
                     {newProductRequests.map((req, i) => (
                         <div key={i} className="p-2 border-b dark:border-gray-700">
-                           <p><strong>{req.productName}</strong> x {req.quantity}</p>
+                           <p><strong>{req.product_name}</strong> x {req.quantity}</p>
                            <p className="text-sm">Pedido por: {req.teacherName}</p>
                            <p className="text-xs text-gray-500">Notas: {req.notes}</p>
                         </div>

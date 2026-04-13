@@ -29,7 +29,7 @@ export const EconomatoManager: React.FC = () => {
     
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
     const suppliersMap = useMemo(() => new Map(suppliers.map(s => [s.id, s])), [suppliers]);
-    const managerUser = useMemo(() => users.find(u => u.id === companyInfo.managerUserId), [users, companyInfo]);
+    const managerUser = useMemo(() => users.find(u => u.id === companyInfo.manager_user_id), [users, companyInfo]);
 
     // Data for List View
     const processableEvents = useMemo(() => {
@@ -37,10 +37,10 @@ export const EconomatoManager: React.FC = () => {
 
         orders.forEach(order => {
             if (['Procesado', 'Recibido Parcial', 'Recibido OK', 'Completado'].includes(order.status)) {
-                if (!eventInfoMap.has(order.eventId)) {
-                    eventInfoMap.set(order.eventId, { totalCost: 0, verificationStatus: 'Verificado', firstProcessedDate: order.date });
+                if (!eventInfoMap.has(order.event_id)) {
+                    eventInfoMap.set(order.event_id, { totalCost: 0, verificationStatus: 'Verificado', firstProcessedDate: order.date });
                 }
-                const info = eventInfoMap.get(order.eventId)!;
+                const info = eventInfoMap.get(order.event_id)!;
                 info.totalCost += order.cost || 0;
                 if (['Procesado', 'Recibido Parcial'].includes(order.status)) {
                     info.verificationStatus = 'Pendiente';
@@ -63,14 +63,14 @@ export const EconomatoManager: React.FC = () => {
         if (!selectedEventId) return [];
         const itemsMap = new Map<string, { product: Product, quantity: number }>();
         orders
-            .filter(o => o.eventId === selectedEventId && ['Procesado', 'Recibido Parcial'].includes(o.status))
+            .filter(o => o.event_id === selectedEventId && ['Procesado', 'Recibido Parcial'].includes(o.status))
             .forEach(order => {
                 order.items.forEach(item => {
-                    const product = productsMap.get(item.productId);
+                    const product = productsMap.get(item.product_id);
                     if (product) {
-                        const existing = itemsMap.get(item.productId) || { product, quantity: 0 };
+                        const existing = itemsMap.get(item.product_id) || { product, quantity: 0 };
                         existing.quantity += item.quantity;
-                        itemsMap.set(item.productId, existing);
+                        itemsMap.set(item.product_id, existing);
                     }
                 });
             });
@@ -84,8 +84,8 @@ export const EconomatoManager: React.FC = () => {
             aggregatedProductsForSelectedEvent.forEach(({ product, quantity }) => {
                 initialReceptionItems.set(product.id, {
                     status: 'pendiente',
-                    orderedQuantity: quantity,
-                    receivedQuantity: quantity,
+                    ordered_quantity: quantity,
+                    received_quantity: quantity,
                 });
             });
             setReceptionItems(initialReceptionItems);
@@ -102,8 +102,8 @@ export const EconomatoManager: React.FC = () => {
             const newMap = new Map(prev);
             const item = newMap.get(productId);
             if (item) {
-                const newStatus = newQuantity < item.orderedQuantity ? 'parcial' : 'ok';
-                newMap.set(productId, { ...item, receivedQuantity: newQuantity, status: item.status === 'incidencia' ? 'incidencia' : newStatus });
+                const newStatus = newQuantity < item.ordered_quantity ? 'parcial' : 'ok';
+                newMap.set(productId, { ...item, received_quantity: newQuantity, status: item.status === 'incidencia' ? 'incidencia' : newStatus });
             }
             return newMap;
         });
@@ -136,8 +136,8 @@ export const EconomatoManager: React.FC = () => {
 
         const newIncident: Incident = {
             id: `inc-${Date.now()}`, date: new Date().toISOString(), description: incidentDescription,
-            reportedBy: currentUser.id, status: 'Abierta', supplierId: bestSupplierInfo?.supplierId || 'unknown',
-            productId: incidentTarget.productId, eventId: selectedEventId,
+            reported_by: currentUser.id, status: 'Abierta', supplier_id: bestSupplierInfo?.supplier_id || 'unknown',
+            product_id: incidentTarget.productId, event_id: selectedEventId,
         };
 
         setIncidents([...incidents, newIncident]);
@@ -153,7 +153,7 @@ export const EconomatoManager: React.FC = () => {
         const finalStatus: OrderStatus = hasPartialOrIncident ? 'Recibido Parcial' : 'Recibido OK';
 
         setOrders(orders.map(o => {
-            if (o.eventId === selectedEventId && ['Procesado', 'Recibido Parcial'].includes(o.status)) {
+            if (o.event_id === selectedEventId && ['Procesado', 'Recibido Parcial'].includes(o.status)) {
                 return { ...o, status: finalStatus };
             }
             return o;
@@ -174,10 +174,10 @@ export const EconomatoManager: React.FC = () => {
         
         const incidentsForEvent = incidents.filter(inc => 
             // FIX: Explicitly typed `d` parameter to resolve type inference issue.
-            receptionData.some((d: { product: Product; receptionInfo: ReceptionItem }) => d.product.id === inc.productId && d.receptionInfo.status === 'incidencia')
+            receptionData.some((d: { product: Product; receptionInfo: ReceptionItem }) => d.product.id === inc.product_id && d.receptionInfo.status === 'incidencia')
         );
 
-        generateReceptionSheetPdf(event, receptionData, incidentsForEvent, companyInfo, managerUser, creatorInfo.appName);
+        generateReceptionSheetPdf(event, receptionData, incidentsForEvent, companyInfo, managerUser, creatorInfo.app_name);
     }
 
     const allItemsVerified = useMemo(() => 
@@ -262,11 +262,11 @@ export const EconomatoManager: React.FC = () => {
                                 return (
                                     <tr key={product.id} className={`border-b dark:border-gray-700 ${statusClasses[itemState.status]}`}>
                                         <td className="p-2 font-semibold">{product.name}</td>
-                                        <td className="p-2">{itemState.orderedQuantity}</td>
+                                        <td className="p-2">{itemState.ordered_quantity}</td>
                                         <td className="p-2">
                                             <input 
                                                 type="number" 
-                                                value={itemState.receivedQuantity} 
+                                                value={itemState.received_quantity} 
                                                 onChange={e => handleReceivedQuantityChange(product.id, e.target.value)}
                                                 className="w-24 p-1 border rounded dark:bg-gray-800"
                                             />

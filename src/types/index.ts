@@ -37,28 +37,28 @@ export interface User {
   password?: string;
   avatar: string;
   profiles: Profile[];
-  activityStatus: UserActivityStatus;
-  locationStatus: UserLocationStatus;
-  contractType?: 'Fijo' | 'Interino';
-  roleType?: 'Titular' | 'Sustituto';
-  classroomId?: string;
+  activity_status: UserActivityStatus;
+  location_status: UserLocationStatus;
+  contract_type?: 'Fijo' | 'Interino';
+  role_type?: 'Titular' | 'Sustituto';
+  classroom_id?: string;
   phone?: string;
-  secondaryPhone?: string;
+  secondary_phone?: string;
   address?: string;
-  studentSimulatedProfile?: Profile.TEACHER | Profile.ALMACEN;
-  mustChangePassword?: boolean;
+  student_simulated_profile?: Profile.TEACHER | Profile.ALMACEN;
+  must_change_password?: boolean;
 }
 
 export interface Company {
   name: string;
   logo: string;
-  printLogo: string;
+  print_logo: string;
   cif: string;
   address: string;
   phone: string;
   email: string;
-  defaultBudget: number;
-  managerUserId?: string;
+  default_budget: number;
+  manager_user_id?: string;
 }
 
 export interface Creator {
@@ -66,11 +66,11 @@ export interface Creator {
   logo: string;
   website: string;
   copyright: string;
-  appName: string;
+  app_name: string;
 }
 
 export interface ProductSupplier {
-  supplierId: string;
+  supplier_id: string;
   price: number;
 }
 
@@ -86,8 +86,8 @@ export interface Product {
   family: string;
   allergens: string[];
   status: 'Activo' | 'Inactivo';
-  productState?: ProductState;
-  warehouseStatus?: WarehouseStatus;
+  product_state?: ProductState;
+  warehouse_status?: WarehouseStatus;
 }
 
 export interface Supplier {
@@ -97,7 +97,7 @@ export interface Supplier {
   address: string;
   phone: string;
   email: string;
-  contactPerson: string;
+  contact_person: string;
   status: SupplierStatus;
   website?: string;
   notes?: string;
@@ -107,34 +107,34 @@ export interface Event {
     id: string;
     name: string;
     type: 'Regular' | 'Extraordinario';
-    startDate: string; // ISO string
-    endDate: string; // ISO string
-    budgetPerTeacher: number;
-    authorizedTeachers?: string[]; // user IDs
+    start_date: string; // ISO string
+    end_date: string; // ISO string
+    budget_per_teacher: number;
+    authorized_teachers?: string[]; // user IDs
     status: 'Activo' | 'Inactivo';
 }
 
 export interface OrderItem {
-  productId: string;
+  product_id: string;
   quantity: number;
   price: number;
   tax: number;
 }
 
 export interface NewProductRequest {
-    productName: string;
+    product_name: string;
     quantity: number;
     notes: string;
 }
 
 export interface Order {
   id: string;
-  userId: string;
+  user_id: string;
   date: string; // ISO string
   status: OrderStatus;
-  eventId: string;
+  event_id: string;
   items: OrderItem[];
-  newProductRequests?: NewProductRequest[];
+  new_product_requests?: NewProductRequest[];
   cost?: number;
   notes?: string;
 }
@@ -143,17 +143,17 @@ export interface Incident {
     id: string;
     date: string; // ISO string
     description: string;
-    reportedBy: string; // userId
+    reported_by: string; // userId
     status: 'Abierta' | 'En Progreso' | 'Resuelta';
-    supplierId: string;
-    productId?: string;
-    eventId?: string;
+    supplier_id: string;
+    product_id?: string;
+    event_id?: string;
 }
 
 export interface ReceptionItem {
     status: ReceptionLineStatus;
-    receivedQuantity: number;
-    orderedQuantity: number;
+    received_quantity: number;
+    ordered_quantity: number;
 }
 
 export interface TrainingCycle {
@@ -163,24 +163,24 @@ export interface TrainingCycle {
 
 export interface Module {
     id: string;
-    cycleId: string;
+    cycle_id: string;
     name: string;
 }
 
 export interface Group {
     id: string;
-    moduleId: string;
+    module_id: string;
     name: string;
 }
 
 export interface Assignment {
     id: string;
-    userId: string;
-    groupId: string;
+    user_id: string;
+    group_id: string;
 }
 
 export interface RecipeIngredient {
-  productId: string;
+  product_id: string;
   quantity: number;
   unit: string;
 }
@@ -189,38 +189,38 @@ export interface Recipe {
     id: string;
     name: string;
     description: string;
-    authorId: string;
+    author_id: string;
     photo?: string;
-    yieldAmount: number;
-    yieldUnit: string;
+    yield_amount: number;
+    yield_unit: string;
     category: string;
     ingredients: RecipeIngredient[];
-    preparationSteps: string;
-    keyPoints?: string; // For notes
-    isPublic: boolean;
+    preparation_steps: string;
+    key_points?: string; // For notes
+    is_public: boolean;
     cost: number; // Will be auto-calculated
     price: number;
-    customSection?: {
+    custom_section?: {
         title: string;
         content: string;
     };
     presentation?: string;
     temperature?: 'Caliente' | 'Frio' | 'Ambiente';
-    recommendedMarking?: string;
-    serviceType?: string;
-    clientDescription?: string;
-    serviceTime?: string;
+    recommended_marking?: string;
+    service_type?: string;
+    client_description?: string;
+    service_time?: string;
 }
 
 export interface StockItem {
     id: string; // productId
     stock: number;
-    minStock: number;
+    min_stock: number;
 }
 
 export interface Sale {
     id: string;
-    teacherId: string;
+    teacher_id: string;
     date: string; // ISO string
     amount: number;
     category: string;
@@ -229,18 +229,18 @@ export interface Sale {
 
 export interface Message {
     id: string;
-    senderId: string;
-    recipientIds: string[];
+    sender_id: string;
+    recipient_ids: string[];
     subject: string;
     body: string;
     date: string; // ISO string
-    readBy: { [userId: string]: boolean };
+    read_by: { [user_id: string]: boolean };
 }
 
 export interface Classroom {
     id: string;
     name: string;
-    tutorId: string; // userId
+    tutor_id: string; // userId
 }
 
 export interface ClassroomProduct {
@@ -248,33 +248,33 @@ export interface ClassroomProduct {
     name: string;
     reference: string;
     category: string;
-    classroomId: string;
+    classroom_id: string;
 }
 
 export interface ClassroomSupplier {
     id: string;
     name: string;
-    classroomId: string;
+    classroom_id: string;
 }
 
 export interface ClassroomEvent {
     id: string;
     name: string;
-    startDate: string; // ISO string
-    endDate: string; // ISO string
-    classroomId: string;
+    start_date: string; // ISO string
+    end_date: string; // ISO string
+    classroom_id: string;
 }
 
 export interface ClassroomOrderItem {
-    productId: string;
+    product_id: string;
     quantity: number;
 }
 
 export interface ClassroomOrder {
     id: string;
-    studentId: string; // userId of student
-    eventId: string;
-    classroomId: string;
+    student_id: string; // userId of student
+    event_id: string;
+    classroom_id: string;
     date: string; // ISO string
     status: 'Pendiente' | 'Completado';
     items: ClassroomOrderItem[];
@@ -285,19 +285,19 @@ export type ServiceRole = 'Cocina' | 'Postres' | 'Servicios (Sala)' | 'Cafeterí
 export interface ServiceGroup {
     id: string;
     name: string;
-    teacherIds: string[];
+    teacher_ids: string[];
     roles?: Partial<Record<ServiceRole, string[]>>;
 }
 
 export interface ServiceMenuItem {
-    recipeId: string;
+    recipe_id: string;
 }
 
 export interface Service {
     id: string;
     name: string;
     date: string; // ISO string
-    serviceGroupId: string;
+    service_group_id: string;
     menu: ServiceMenuItem[];
     roles: Partial<Record<ServiceRole, string>>; // string is userId
     status: 'Planificación' | 'Confirmado' | 'Completado';
@@ -310,19 +310,19 @@ export interface AppData {
     events: Event[];
     orders: Order[];
     incidents: Incident[];
-    trainingCycles: TrainingCycle[];
+    training_cycles: TrainingCycle[];
     modules: Module[];
     groups: Group[];
     assignments: Assignment[];
     recipes: Recipe[];
     sales: Sale[];
-    miniEconomatoStock: StockItem[];
+    mini_economato_stock: StockItem[];
     messages: Message[];
     classrooms: Classroom[];
-    classroomProducts: ClassroomProduct[];
-    classroomSuppliers: ClassroomSupplier[];
-    classroomEvents: ClassroomEvent[];
-    classroomOrders: ClassroomOrder[];
-    serviceGroups: ServiceGroup[];
+    classroom_products: ClassroomProduct[];
+    classroom_suppliers: ClassroomSupplier[];
+    classroom_events: ClassroomEvent[];
+    classroom_orders: ClassroomOrder[];
+    service_groups: ServiceGroup[];
     services: Service[];
 }

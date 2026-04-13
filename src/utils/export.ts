@@ -160,8 +160,8 @@ export const generateReceptionSheetPdf = (
     // Table
     const body = receptionData.map(({ product, receptionInfo }) => [
         product.name,
-        receptionInfo.orderedQuantity,
-        receptionInfo.receivedQuantity,
+        receptionInfo.ordered_quantity,
+        receptionInfo.received_quantity,
         receptionInfo.status.toUpperCase(),
         '' // For signature
     ]);
@@ -189,7 +189,7 @@ export const generateReceptionSheetPdf = (
         doc.setFontSize(14);
         doc.text('Incidencias Registradas', 14, finalY + 15);
         const incidentBody = incidents.map(inc => [
-            receptionData.find(d => d.product.id === inc.productId)?.product.name || 'N/A',
+            receptionData.find(d => d.product.id === inc.product_id)?.product.name || 'N/A',
             inc.description
         ]);
         (doc as any).autoTable({

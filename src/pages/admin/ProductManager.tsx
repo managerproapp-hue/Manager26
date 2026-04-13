@@ -39,7 +39,7 @@ const WAREHOUSE_STATUSES: WarehouseStatus[] = ['Disponible', 'Bajo Pedido', 'Des
 // FIX: Export ProductFormModal so it can be reused in other components.
 export const ProductFormModal: React.FC<{ product: Product | null; onClose: () => void; onSave: (product: Product) => void; allProducts: Product[]; allSuppliers: Supplier[] }> = ({ product, onClose, onSave, allProducts, allSuppliers }) => {
     const [formState, setFormState] = useState<Product>(product || { 
-        id: '', name: '', description: '', reference: `REF-${Date.now().toString().slice(-6)}`, unit: 'Uds', suppliers: [], tax: 21, category: '', family: '', allergens: [], status: 'Activo', productState: 'Fresco', warehouseStatus: 'Disponible'
+        id: '', name: '', description: '', reference: `REF-${Date.now().toString().slice(-6)}`, unit: 'Uds', suppliers: [], tax: 21, category: '', family: '', allergens: [], status: 'Activo', product_state: 'Fresco', warehouse_status: 'Disponible'
     });
     
     const [families, setFamilies] = useState<string[]>(() => [...new Set([...PREDEFINED_FAMILIES, ...allProducts.map(p => p.family).filter(f => f)])].sort());
@@ -54,7 +54,7 @@ export const ProductFormModal: React.FC<{ product: Product | null; onClose: () =
         setFormState({ ...formState, [name]: type === 'number' ? parseFloat(value) || 0 : value });
     };
 
-    const handleSupplierChange = (index: number, field: 'supplierId' | 'price', value: string) => {
+    const handleSupplierChange = (index: number, field: 'supplier_id' | 'price', value: string) => {
         const newSuppliers = [...formState.suppliers];
         newSuppliers[index] = {...newSuppliers[index], [field]: field === 'price' ? parseFloat(value) || 0 : value};
         setFormState({...formState, suppliers: newSuppliers});
@@ -111,7 +111,7 @@ export const ProductFormModal: React.FC<{ product: Product | null; onClose: () =
         }
     };
     
-    const addSupplier = () => setFormState({...formState, suppliers: [...formState.suppliers, {supplierId: '', price: 0}]});
+    const addSupplier = () => setFormState({...formState, suppliers: [...formState.suppliers, {supplier_id: '', price: 0}]});
     const removeSupplier = (index: number) => setFormState({...formState, suppliers: formState.suppliers.filter((_, i) => i !== index)});
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -156,13 +156,13 @@ export const ProductFormModal: React.FC<{ product: Product | null; onClose: () =
                      </div>
                       <div>
                         <label className="text-sm">Condición del Producto</label>
-                        <select name="productState" value={formState.productState} onChange={handleChange} className="mt-1 block w-full rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600">
+                        <select name="product_state" value={formState.product_state} onChange={handleChange} className="mt-1 block w-full rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600">
                             {PRODUCT_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                      </div>
                      <div>
                         <label className="text-sm">Estado (Almacén)</label>
-                        <select name="warehouseStatus" value={formState.warehouseStatus} onChange={handleChange} className="mt-1 block w-full rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600">
+                        <select name="warehouse_status" value={formState.warehouse_status} onChange={handleChange} className="mt-1 block w-full rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600">
                             {WAREHOUSE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                      </div>
@@ -202,12 +202,12 @@ export const ProductFormModal: React.FC<{ product: Product | null; onClose: () =
                         ))}
                     </div>
                 </div>
-                
+
                 <div className="pt-2">
                      <h4 className="font-semibold">Proveedores y Precios</h4>
                      {formState.suppliers.map((s, index) => (
                          <div key={index} className="flex items-center space-x-2 mt-2">
-                            <select value={s.supplierId} onChange={(e) => handleSupplierChange(index, 'supplierId', e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                            <select value={s.supplier_id} onChange={(e) => handleSupplierChange(index, 'supplier_id', e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
                                 <option value="">-- Selecciona --</option>
                                 {allSuppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                             </select>
@@ -320,7 +320,7 @@ export const ProductManager: React.FC = () => {
             return { price: null, supplierName: 'N/A', otherSupplierCount: 0 };
         }
 
-        const activeProductSuppliers = product.suppliers.filter(ps => activeSuppliers.has(ps.supplierId));
+        const activeProductSuppliers = product.suppliers.filter(ps => activeSuppliers.has(ps.supplier_id));
 
         if (activeProductSuppliers.length === 0) {
             return { price: null, supplierName: 'Ninguno Activo', otherSupplierCount: product.suppliers.length };
@@ -328,7 +328,7 @@ export const ProductManager: React.FC = () => {
 
         const sortedByPrice = [...activeProductSuppliers].sort((a, b) => a.price - b.price);
         const best = sortedByPrice[0];
-        const supplier = suppliersMap.get(best.supplierId);
+        const supplier = suppliersMap.get(best.supplier_id);
 
         return {
             price: best.price,

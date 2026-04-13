@@ -64,9 +64,9 @@ async function startServer() {
                 email,
                 name,
                 profiles,
-                mustChangePassword: false,
-                activityStatus: 'Activo',
-                locationStatus: 'En el centro'
+                must_change_password: false,
+                activity_status: 'Activo',
+                location_status: 'En el centro'
               });
               console.log('Master user password and record updated.');
             }
@@ -82,9 +82,9 @@ async function startServer() {
             email,
             name,
             profiles,
-            mustChangePassword: false,
-            activityStatus: 'Activo',
-            locationStatus: 'En el centro'
+            must_change_password: false,
+            activity_status: 'Activo',
+            location_status: 'En el centro'
           });
           console.log('Master user created successfully.');
         }
@@ -102,7 +102,7 @@ async function startServer() {
         return res.status(500).json({ error: 'Supabase Service Role Key not configured.' });
       }
 
-      const { email, password, name, profiles, contractType, roleType, phone, address } = req.body;
+      const { email, password, name, profiles, contract_type, role_type, phone, address } = req.body;
       console.log('API: Creating user:', email);
 
       let userId: string | null = null;
@@ -159,13 +159,13 @@ async function startServer() {
           email,
           name,
           profiles,
-          contractType,
-          roleType,
+          contract_type,
+          role_type,
           phone,
           address,
-          mustChangePassword: true,
-          activityStatus: 'Activo',
-          locationStatus: 'En el centro',
+          must_change_password: true,
+          activity_status: 'Activo',
+          location_status: 'En el centro',
           avatar: `https://i.pravatar.cc/150?u=${userId}`
         });
 

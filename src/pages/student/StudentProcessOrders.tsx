@@ -8,42 +8,42 @@ import { printPage } from '../../utils/export';
 
 type AggregatedClassroomProduct = {
     product: ClassroomProduct;
-    totalQuantity: number;
+    total_quantity: number;
 }
 
 export const StudentProcessOrders: React.FC = () => {
     const { currentUser } = useAuth();
-    const { classroomOrders, classroomProducts, classroomSuppliers, classroomEvents } = useData();
+    const { classroom_orders, classroom_products, classroom_suppliers, classroom_events } = useData();
 
-    const myClassroomId = currentUser?.classroomId;
+    const myClassroomId = currentUser?.classroom_id;
     
     const eventToProcess = useMemo(() => 
-        classroomEvents.find(e => e.classroomId === myClassroomId && new Date(e.endDate) > new Date())
-    , [classroomEvents, myClassroomId]);
+        classroom_events.find((e: any) => e.classroom_id === myClassroomId && new Date(e.end_date) > new Date())
+    , [classroom_events, myClassroomId]);
 
     const aggregatedProducts = useMemo<AggregatedClassroomProduct[]>(() => {
         if (!eventToProcess) return [];
 
-        const productsMap = new Map<string, ClassroomProduct>(classroomProducts.map(p => [p.id, p]));
+        const productsMap = new Map<string, ClassroomProduct>(classroom_products.map((p: any) => [p.id, p]));
         const productAggregation: Map<string, AggregatedClassroomProduct> = new Map();
         
-        const eventOrders = classroomOrders.filter(o => o.eventId === eventToProcess.id && o.status === 'Pendiente');
+        const eventOrders = classroom_orders.filter((o: any) => o.event_id === eventToProcess.id && o.status === 'Pendiente');
 
         for (const order of eventOrders) {
             for (const item of order.items) {
-                const product = productsMap.get(item.productId);
+                const product = productsMap.get(item.product_id);
                 if (!product) continue;
 
                 if (!productAggregation.has(product.id)) {
-                    productAggregation.set(product.id, { product, totalQuantity: 0 });
+                    productAggregation.set(product.id, { product, total_quantity: 0 });
                 }
-                productAggregation.get(product.id)!.totalQuantity += item.quantity;
+                productAggregation.get(product.id)!.total_quantity += item.quantity;
             }
         }
         return Array.from(productAggregation.values());
-    }, [classroomOrders, classroomProducts, eventToProcess]);
+    }, [classroom_orders, classroom_products, eventToProcess]);
     
-    const suppliersForClass = useMemo(() => classroomSuppliers.filter(s => s.classroomId === myClassroomId), [classroomSuppliers, myClassroomId]);
+    const suppliersForClass = useMemo(() => classroom_suppliers.filter((s: any) => s.classroom_id === myClassroomId), [classroom_suppliers, myClassroomId]);
 
     if (!eventToProcess) {
         return <Card title="Procesar Pedidos"><p>No hay eventos de pedido de práctica activos en este momento.</p></Card>;
@@ -61,15 +61,15 @@ export const StudentProcessOrders: React.FC = () => {
              <p className="mb-6 text-gray-500">Agrupa los productos y asígnalos a un proveedor ficticio.</p>
             
             <div className="space-y-4">
-                {aggregatedProducts.map(({ product, totalQuantity }) => (
+                {aggregatedProducts.map(({ product, total_quantity }) => (
                     <Card key={product.id} title={product.name}>
                          <div className="grid grid-cols-3 gap-4 items-center">
-                             <div><strong>Total a pedir:</strong> {totalQuantity} unidades</div>
+                             <div><strong>Total a pedir:</strong> {total_quantity} unidades</div>
                              <div className="col-span-2">
                                 <label className="text-sm">Asignar a Proveedor:</label>
                                 <select className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 no-print">
                                     <option value="">Selecciona...</option>
-                                    {suppliersForClass.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    {suppliersForClass.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
                             </div>
                          </div>

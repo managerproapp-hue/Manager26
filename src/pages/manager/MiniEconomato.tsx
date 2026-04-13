@@ -9,8 +9,8 @@ import { printPage } from '../../utils/export';
 const AssignExpenseModal: React.FC<{product: Product; onClose: () => void; onAssign: (teacherId: string, quantity: number) => void; teachers: User[]}> = ({ product, onClose, onAssign, teachers }) => {
     const [teacherId, setTeacherId] = useState('');
     const [quantity, setQuantity] = useState(1);
-    const { miniEconomatoStock } = useData();
-    const maxQuantity = miniEconomatoStock.find(s => s.id === product.id)?.stock || 0;
+    const { mini_economato_stock } = useData();
+    const maxQuantity = mini_economato_stock.find((s: StockItem) => s.id === product.id)?.stock || 0;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,16 +40,16 @@ const AssignExpenseModal: React.FC<{product: Product; onClose: () => void; onAss
     );
 };
 
-const AddProductModal: React.FC<{ allProducts: Product[], currentStockIds: string[], onClose: () => void, onAdd: (productId: string, stock: number, minStock: number) => void }> = ({ allProducts, currentStockIds, onClose, onAdd }) => {
+const AddProductModal: React.FC<{ allProducts: Product[], currentStockIds: string[], onClose: () => void, onAdd: (productId: string, stock: number, min_stock: number) => void }> = ({ allProducts, currentStockIds, onClose, onAdd }) => {
     const [productId, setProductId] = useState('');
     const [stock, setStock] = useState(0);
-    const [minStock, setMinStock] = useState(0);
+    const [min_stock, setMinStock] = useState(0);
     
     const availableProducts = useMemo(() => allProducts.filter(p => !currentStockIds.includes(p.id)), [allProducts, currentStockIds]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if(productId) onAdd(productId, stock, minStock);
+        if(productId) onAdd(productId, stock, min_stock);
     };
 
     return (
@@ -60,23 +60,23 @@ const AddProductModal: React.FC<{ allProducts: Product[], currentStockIds: strin
                     {availableProducts.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
                 <input type="number" value={stock} onChange={e => setStock(Number(e.target.value))} placeholder="Stock Inicial" required min="0" step="0.01" className="w-full p-2 border rounded dark:bg-gray-700" />
-                <input type="number" value={minStock} onChange={e => setMinStock(Number(e.target.value))} placeholder="Stock Mínimo" required min="0" step="0.01" className="w-full p-2 border rounded dark:bg-gray-700" />
+                <input type="number" value={min_stock} onChange={e => setMinStock(Number(e.target.value))} placeholder="Stock Mínimo" required min="0" step="0.01" className="w-full p-2 border rounded dark:bg-gray-700" />
                 <div className="flex justify-end"><button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded">Añadir</button></div>
             </form>
         </Modal>
     );
 };
 
-const EditStockModal: React.FC<{ item: StockItem, productName: string, onClose: () => void, onSave: (stock: number, minStock: number) => void }> = ({ item, productName, onClose, onSave }) => {
+const EditStockModal: React.FC<{ item: StockItem, productName: string, onClose: () => void, onSave: (stock: number, min_stock: number) => void }> = ({ item, productName, onClose, onSave }) => {
     const [stock, setStock] = useState(item.stock);
-    const [minStock, setMinStock] = useState(item.minStock);
-    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(stock, minStock); };
+    const [min_stock, setMinStock] = useState(item.min_stock);
+    const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(stock, min_stock); };
 
     return (
         <Modal isOpen={true} onClose={onClose} title={`Editar Stock de ${productName}`}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <input type="number" value={stock} onChange={e => setStock(Number(e.target.value))} placeholder="Stock Actual" required min="0" step="0.01" className="w-full p-2 border rounded dark:bg-gray-700" />
-                <input type="number" value={minStock} onChange={e => setMinStock(Number(e.target.value))} placeholder="Stock Mínimo" required min="0" step="0.01" className="w-full p-2 border rounded dark:bg-gray-700" />
+                <input type="number" value={min_stock} onChange={e => setMinStock(Number(e.target.value))} placeholder="Stock Mínimo" required min="0" step="0.01" className="w-full p-2 border rounded dark:bg-gray-700" />
                 <div className="flex justify-end"><button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded">Guardar</button></div>
             </form>
         </Modal>
@@ -85,15 +85,15 @@ const EditStockModal: React.FC<{ item: StockItem, productName: string, onClose: 
 
 
 export const MiniEconomato: React.FC = () => {
-    const { miniEconomatoStock, setMiniEconomatoStock, products, users, orders, setOrders, events } = useData();
+    const { mini_economato_stock, setMiniEconomatoStock, products, users, orders, setOrders, events } = useData();
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [productToAssign, setProductToAssign] = useState<Product | null>(null);
     const [itemToEdit, setItemToEdit] = useState<StockItem | null>(null);
 
-    const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
-    const stockMap = useMemo(() => new Map(miniEconomatoStock.map(s => [s.id, s])), [miniEconomatoStock]);
+    const productsMap = useMemo(() => new Map(products.map((p: Product) => [p.id, p])), [products]);
+    const stockMap = useMemo(() => new Map(mini_economato_stock.map((s: StockItem) => [s.id, s])), [mini_economato_stock]);
 
     const economatoProducts = useMemo(() => 
         Array.from(stockMap.values()).map((stockItem: StockItem) => ({
@@ -121,7 +121,7 @@ export const MiniEconomato: React.FC = () => {
         }
         
         const now = new Date();
-        const activeEvent = events.find(e => e.type === 'Regular' && new Date(e.startDate) <= now && new Date(e.endDate) >= now);
+        const activeEvent = events.find(e => e.type === 'Regular' && new Date(e.start_date) <= now && new Date(e.end_date) >= now);
         if (!activeEvent) {
             alert("No hay un evento de pedido 'Regular' activo en este momento para imputar el gasto.");
             return;
@@ -140,7 +140,7 @@ export const MiniEconomato: React.FC = () => {
         }
         
         const newItem: OrderItem = {
-            productId: productToAssign.id,
+            product_id: productToAssign.id,
             quantity,
             price: priceInfo.price,
             tax: productToAssign.tax
@@ -148,10 +148,10 @@ export const MiniEconomato: React.FC = () => {
 
         const newOrder: Order = {
             id: `ord-eco-${Date.now()}`,
-            userId: teacherId,
+            user_id: teacherId,
             date: new Date().toISOString(),
             status: 'Completado',
-            eventId: activeEvent.id,
+            event_id: activeEvent.id,
             items: [newItem],
             cost: (newItem.price * newItem.quantity) * (1 + newItem.tax / 100),
             notes: `Asignado desde Mini-Economato.`
@@ -167,14 +167,14 @@ export const MiniEconomato: React.FC = () => {
         setProductToAssign(null);
     };
     
-    const handleAddProduct = (productId: string, stock: number, minStock: number) => {
-        setMiniEconomatoStock(prev => [...prev, {id: productId, stock, minStock}]);
+    const handleAddProduct = (productId: string, stock: number, min_stock: number) => {
+        setMiniEconomatoStock((prev: StockItem[]) => [...prev, {id: productId, stock, min_stock}]);
         setIsAddModalOpen(false);
     }
     
-    const handleEditStock = (stock: number, minStock: number) => {
+    const handleEditStock = (stock: number, min_stock: number) => {
         if (!itemToEdit) return;
-        setMiniEconomatoStock(prev => prev.map(item => item.id === itemToEdit.id ? {...item, stock, minStock} : item));
+        setMiniEconomatoStock((prev: StockItem[]) => prev.map((item: StockItem) => item.id === itemToEdit.id ? {...item, stock, min_stock} : item));
         setIsEditModalOpen(false);
     }
 
@@ -196,11 +196,11 @@ export const MiniEconomato: React.FC = () => {
             <Card title="Stock Interno">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {economatoProducts.map(({ product, stock }) => {
-                        const stockLevel = getStockLevel(stock.stock, stock.minStock);
+                        const stockLevel = getStockLevel(stock.stock, stock.min_stock);
                         return (
                         <div key={product.id} className={`p-4 rounded-lg border ${stockLevel.className}`}>
                             <h4 className="font-bold">{product.name}</h4>
-                            <p>Stock: <span className="font-bold text-xl">{stock.stock.toFixed(2)}</span> / Mínimo: {stock.minStock}</p>
+                            <p>Stock: <span className="font-bold text-xl">{stock.stock.toFixed(2)}</span> / Mínimo: {stock.min_stock}</p>
                              <p className="text-xs font-semibold">{stockLevel.text}</p>
                             <div className="mt-2 space-x-2 no-print">
                                 <button onClick={() => { setItemToEdit(stock); setIsEditModalOpen(true); }} className="text-xs bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">
@@ -221,14 +221,14 @@ export const MiniEconomato: React.FC = () => {
                     product={productToAssign}
                     onClose={() => setIsAssignModalOpen(false)}
                     onAssign={handleAssignExpense}
-                    teachers={users.filter(u => u.profiles.includes(Profile.TEACHER) && u.activityStatus === 'Activo')}
+                    teachers={users.filter(u => u.profiles.includes(Profile.TEACHER) && u.activity_status === 'Activo')}
                 />
             )}
 
             {isAddModalOpen && (
                 <AddProductModal
                     allProducts={products}
-                    currentStockIds={miniEconomatoStock.map(s => s.id)}
+                    currentStockIds={mini_economato_stock.map((s: StockItem) => s.id)}
                     onClose={() => setIsAddModalOpen(false)}
                     onAdd={handleAddProduct}
                 />

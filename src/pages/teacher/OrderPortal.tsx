@@ -12,10 +12,10 @@ export const OrderPortal: React.FC = () => {
     const { currentUser } = useAuth();
     
     const now = new Date();
-    const activeEvents = events.filter(e => new Date(e.startDate) <= now && new Date(e.endDate) >= now);
+    const activeEvents = events.filter(e => new Date(e.start_date) <= now && new Date(e.end_date) >= now);
 
     const getMyOrderForEvent = (event: Event) => {
-        return orders.find(o => o.userId === currentUser?.id && o.eventId === event.id);
+        return orders.find(o => o.user_id === currentUser?.id && o.event_id === event.id);
     };
 
     const handleExport = () => {
@@ -23,7 +23,7 @@ export const OrderPortal: React.FC = () => {
             const myOrder = getMyOrderForEvent(event);
             return {
                 evento: event.name,
-                finaliza: new Date(event.endDate).toLocaleString(),
+                finaliza: new Date(event.end_date).toLocaleString(),
                 estado_mi_pedido: myOrder ? myOrder.status : 'No realizado'
             }
         });
@@ -57,7 +57,7 @@ export const OrderPortal: React.FC = () => {
                                     return (
                                         <tr key={event.id} className="border-b dark:border-gray-700">
                                             <td className="px-4 py-3 font-medium">{event.name}</td>
-                                            <td className="px-4 py-3">{new Date(event.endDate).toLocaleString()}</td>
+                                            <td className="px-4 py-3">{new Date(event.end_date).toLocaleString()}</td>
                                             <td className="px-4 py-3">{myOrder ? myOrder.status : 'No realizado'}</td>
                                             <td className="px-4 py-3 no-print">
                                                 {myOrder && myOrder.status === 'Borrador' && <Link to={`/teacher/order-portal/edit/${myOrder.id}`} className="text-primary-600 hover:underline">Editar Borrador</Link>}

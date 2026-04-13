@@ -26,10 +26,10 @@ Te comparto esta receta que podría interesarte:
 **Descripción:**
 ${recipe.description}
 
-**Rendimiento:** ${recipe.yieldAmount} ${recipe.yieldUnit}
+**Rendimiento:** ${recipe.yield_amount} ${recipe.yield_unit}
 
 **Preparación:**
-${recipe.preparationSteps}
+${recipe.preparation_steps}
 
 ---
 Este mensaje ha sido generado automáticamente.
@@ -69,34 +69,34 @@ export const RecipeManager: React.FC = () => {
             if (recipe.name.toLowerCase().includes(lowerCaseSearch)) return true;
             // Search by ingredient name
             return recipe.ingredients.some(ing => 
-                productsMap.get(ing.productId)?.name.toLowerCase().includes(lowerCaseSearch)
+                productsMap.get(ing.product_id)?.name.toLowerCase().includes(lowerCaseSearch)
             );
         });
     }, [recipes, searchTerm, productsMap]);
 
-    const myRecipes = useMemo(() => filteredRecipes.filter(r => r.authorId === currentUser?.id), [filteredRecipes, currentUser]);
-    const publicRecipes = useMemo(() => filteredRecipes.filter(r => r.isPublic && r.authorId !== currentUser?.id), [filteredRecipes, currentUser]);
+    const myRecipes = useMemo(() => filteredRecipes.filter(r => r.author_id === currentUser?.id), [filteredRecipes, currentUser]);
+    const publicRecipes = useMemo(() => filteredRecipes.filter(r => r.is_public && r.author_id !== currentUser?.id), [filteredRecipes, currentUser]);
 
     const handleDuplicate = (recipe: Recipe) => {
         if (!currentUser) return;
         const newRecipe: Recipe = {
             ...recipe,
             id: `rec-${Date.now()}`,
-            authorId: currentUser.id,
+            author_id: currentUser.id,
             name: `${recipe.name} (Copia)`,
-            isPublic: false, // Duplicates are private by default
+            is_public: false, // Duplicates are private by default
         };
         setRecipes(prev => [...prev, newRecipe]);
         navigate(`/teacher/recipes/edit/${newRecipe.id}`);
     };
 
-    const handleShare = (message: Omit<Message, 'id' | 'date' | 'senderId' | 'readBy'>) => {
+    const handleShare = (message: Omit<Message, 'id' | 'date' | 'sender_id' | 'read_by'>) => {
         if (!currentUser) return;
         const fullMessage: Message = {
             id: `msg-${Date.now()}`,
-            senderId: currentUser.id,
+            sender_id: currentUser.id,
             date: new Date().toISOString(),
-            readBy: {},
+            read_by: {},
             ...message
         };
         setMessages([...messages, fullMessage]);
@@ -156,7 +156,7 @@ export const RecipeManager: React.FC = () => {
                             <div key={recipe.id} className="p-4 border rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
                                 <h3 className="font-bold text-lg">{recipe.name}</h3>
                                 <p className="text-sm text-gray-500 truncate">{recipe.description}</p>
-                                <p className="text-xs text-gray-400 mt-1">Autor: {usersMap.get(recipe.authorId)?.name || 'Desconocido'}</p>
+                                <p className="text-xs text-gray-400 mt-1">Autor: {usersMap.get(recipe.author_id)?.name || 'Desconocido'}</p>
                                 <div className="text-right mt-2 no-print flex justify-end items-center space-x-3">
                                      <button onClick={() => setRecipeToShare(recipe)} title="Compartir" className="text-gray-500 hover:text-primary-600"><ShareIcon className="w-5 h-5"/></button>
                                      <button onClick={() => handleDuplicate(recipe)} className="text-sm bg-green-600 text-white py-1 px-3 rounded-md hover:bg-green-700">Hacer Mía</button>

@@ -24,8 +24,8 @@ export const SupplierManager = () => {
         const map = new Map<string, Product[]>();
         products.forEach(p => {
             p.suppliers.forEach(s => {
-                if (!map.has(s.supplierId)) map.set(s.supplierId, []);
-                map.get(s.supplierId)!.push(p);
+                if (!map.has(s.supplier_id)) map.set(s.supplier_id, []);
+                map.get(s.supplier_id)!.push(p);
             });
         });
         return map;
@@ -37,8 +37,8 @@ export const SupplierManager = () => {
             const productCounts = new Map<string, number>();
             orders.filter(o => o.status === 'Completado' || o.status === 'Recibido OK').forEach(order => {
                 order.items.forEach(item => {
-                    const product = products.find(p => p.id === item.productId);
-                    if (product && product.suppliers.some(s => s.supplierId === sup.id)) {
+                    const product = products.find(p => p.id === item.product_id);
+                    if (product && product.suppliers.some(s => s.supplier_id === sup.id)) {
                         productCounts.set(product.name, (productCounts.get(product.name) || 0) + item.quantity);
                     }
                 });
@@ -56,8 +56,8 @@ export const SupplierManager = () => {
     const incidentsBySupplier = useMemo(() => {
         const map = new Map<string, Incident[]>();
         incidents.forEach(inc => {
-            if (!map.has(inc.supplierId)) map.set(inc.supplierId, []);
-            map.get(inc.supplierId)!.push(inc);
+            if (!map.has(inc.supplier_id)) map.set(inc.supplier_id, []);
+            map.get(inc.supplier_id)!.push(inc);
         });
         return map;
     }, [incidents]);
@@ -87,7 +87,7 @@ export const SupplierManager = () => {
         // Remove supplier from any products that reference it
         const updatedProducts = products.map(p => ({
             ...p,
-            suppliers: p.suppliers.filter(s => s.supplierId !== selectedSupplier.id)
+            suppliers: p.suppliers.filter(s => s.supplier_id !== selectedSupplier.id)
         }));
         setProducts(updatedProducts);
 
@@ -143,7 +143,7 @@ export const SupplierManager = () => {
                                 </div>
                             </div>
                              <div className="text-xs mt-2">
-                                <strong>Contacto:</strong> {supplier.contactPerson} | <strong>Tlf:</strong> {supplier.phone}<br/>
+                                <strong>Contacto:</strong> {supplier.contact_person} | <strong>Tlf:</strong> {supplier.phone}<br/>
                                 <strong>Email:</strong> {supplier.email}
                             </div>
                              <div className="text-xs mt-2">
@@ -221,7 +221,7 @@ export const SupplierManager = () => {
 };
 
 const SupplierFormModal: React.FC<{ supplier: Supplier | null; onClose: () => void; onSave: (supplier: Supplier) => void; }> = ({ supplier, onClose, onSave }) => {
-    const [formState, setFormState] = useState<Supplier>(supplier || { id: '', name: '', cif: '', address: '', phone: '', email: '', contactPerson: '', status: 'Activo', website: '', notes: '' });
+    const [formState, setFormState] = useState<Supplier>(supplier || { id: '', name: '', cif: '', address: '', phone: '', email: '', contact_person: '', status: 'Activo', website: '', notes: '' });
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setFormState({ ...formState, [e.target.name]: e.target.value });
     const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(formState); };
 
@@ -230,7 +230,7 @@ const SupplierFormModal: React.FC<{ supplier: Supplier | null; onClose: () => vo
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" name="name" value={formState.name} onChange={handleChange} placeholder="Nombre" required className="w-full p-2 border rounded"/>
-                    <input type="text" name="contactPerson" value={formState.contactPerson} onChange={handleChange} placeholder="Persona de Contacto" className="w-full p-2 border rounded"/>
+                    <input type="text" name="contact_person" value={formState.contact_person} onChange={handleChange} placeholder="Persona de Contacto" className="w-full p-2 border rounded"/>
                     <input type="email" name="email" value={formState.email} onChange={handleChange} placeholder="Email" required className="w-full p-2 border rounded"/>
                     <input type="tel" name="phone" value={formState.phone} onChange={handleChange} placeholder="Teléfono" className="w-full p-2 border rounded"/>
                     <input type="text" name="cif" value={formState.cif} onChange={handleChange} placeholder="CIF" required className="w-full p-2 border rounded"/>
@@ -258,7 +258,7 @@ const SupplierDetailModal: React.FC<{supplier: Supplier, incidents: Incident[], 
         <div className="space-y-4 text-sm">
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <p><strong>Contacto:</strong> {supplier.contactPerson}</p>
+                    <p><strong>Contacto:</strong> {supplier.contact_person}</p>
                     <p><strong>Teléfono:</strong> {supplier.phone}</p>
                     <p><strong>Email:</strong> {supplier.email}</p>
                 </div>
@@ -272,7 +272,7 @@ const SupplierDetailModal: React.FC<{supplier: Supplier, incidents: Incident[], 
                 {incidents.length > 0 ? (
                     <table className="w-full mt-2 text-xs">
                         <thead><tr className="border-b"><th className="text-left p-1">Fecha</th><th className="text-left p-1">Producto</th><th className="text-left p-1">Evento</th><th className="text-left p-1">Motivo</th></tr></thead>
-                        <tbody>{incidents.slice(0, 15).map(inc => <tr key={inc.id}><td className="p-1">{new Date(inc.date).toLocaleDateString()}</td><td className="p-1">{productsMap.get(inc.productId || '')?.name}</td><td className="p-1">{eventsMap.get(inc.eventId || '')?.name}</td><td className="p-1 text-red-500">{inc.description}</td></tr>)}</tbody>
+                        <tbody>{incidents.slice(0, 15).map(inc => <tr key={inc.id}><td className="p-1">{new Date(inc.date).toLocaleDateString()}</td><td className="p-1">{productsMap.get(inc.product_id || '')?.name}</td><td className="p-1">{eventsMap.get(inc.event_id || '')?.name}</td><td className="p-1 text-red-500">{inc.description}</td></tr>)}</tbody>
                     </table>
                 ) : <p className="text-gray-500 mt-2">No hay incidencias registradas para este proveedor.</p>}
             </div>

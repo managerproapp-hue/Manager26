@@ -16,7 +16,7 @@ const StatCard: React.FC<{ title: string; value: string; }> = ({ title, value })
 );
 
 export const ExpenseManager: React.FC = () => {
-    const { orders, sales, users, assignments, groups, modules, trainingCycles, suppliers, products } = useData();
+    const { orders, sales, users, assignments, groups, modules, training_cycles, suppliers, products } = useData();
 
     const analysisData = useMemo(() => {
         const teachers = users.filter(u => u.profiles.includes(Profile.TEACHER) && !SUPER_USER_EMAILS.includes(u.email));
@@ -26,13 +26,13 @@ export const ExpenseManager: React.FC = () => {
         const ingresosTotales = sales.reduce((sum, sale) => sum + sale.amount, 0);
         const balanceGeneral = ingresosTotales - gastoTotal;
 
-        const teachersWithOrders = new Set(completedOrders.map(o => o.userId));
+        const teachersWithOrders = new Set(completedOrders.map(o => o.user_id));
         const gastoMedioPorProfesor = teachersWithOrders.size > 0 ? gastoTotal / teachersWithOrders.size : 0;
         
         // Data by Teacher
         const dataByTeacher = teachers.map(teacher => {
-            const teacherOrders = completedOrders.filter(o => o.userId === teacher.id);
-            const teacherSales = sales.filter(s => s.teacherId === teacher.id);
+            const teacherOrders = completedOrders.filter(o => o.user_id === teacher.id);
+            const teacherSales = sales.filter(s => s.teacher_id === teacher.id);
             const totalSpend = teacherOrders.reduce((sum, o) => sum + (o.cost || 0), 0);
             const totalSales = teacherSales.reduce((sum, s) => sum + s.amount, 0);
             return {
@@ -49,30 +49,30 @@ export const ExpenseManager: React.FC = () => {
 
         // Academic breakdown
         const costByTeacher: { [key: string]: number } = {};
-        completedOrders.forEach(order => { costByTeacher[order.userId] = (costByTeacher[order.userId] || 0) + (order.cost || 0); });
+        completedOrders.forEach(order => { costByTeacher[order.user_id] = (costByTeacher[order.user_id] || 0) + (order.cost || 0); });
         
         const costByGroup: { [key: string]: number } = {};
         Object.keys(costByTeacher).forEach(teacherId => {
-            const teacherAssignments = assignments.filter(a => a.userId === teacherId);
+            const teacherAssignments = assignments.filter(a => a.user_id === teacherId);
             if (teacherAssignments.length > 0) {
                 const costPerAssignment = costByTeacher[teacherId] / teacherAssignments.length;
-                teacherAssignments.forEach(a => { costByGroup[a.groupId] = (costByGroup[a.groupId] || 0) + costPerAssignment; });
+                teacherAssignments.forEach(a => { costByGroup[a.group_id] = (costByGroup[a.group_id] || 0) + costPerAssignment; });
             }
         });
 
         const costByModule: { [key: string]: number } = {};
-        groups.forEach(group => { if(costByGroup[group.id]) costByModule[group.moduleId] = (costByModule[group.moduleId] || 0) + costByGroup[group.id]; });
+        groups.forEach(group => { if(costByGroup[group.id]) costByModule[group.module_id] = (costByModule[group.module_id] || 0) + costByGroup[group.id]; });
 
         const costByCycle: { [key: string]: number } = {};
-        modules.forEach(module => { if(costByModule[module.id]) costByCycle[module.cycleId] = (costByCycle[module.cycleId] || 0) + costByModule[module.id]; });
+        modules.forEach(module => { if(costByModule[module.id]) costByCycle[module.cycle_id] = (costByCycle[module.cycle_id] || 0) + costByModule[module.id]; });
         
         // Supplier breakdown (estimated)
         const costBySupplier: { [key: string]: number } = {};
         completedOrders.forEach(order => {
             order.items.forEach(item => {
-                const product = products.find(p => p.id === item.productId);
+                const product = products.find(p => p.id === item.product_id);
                 if (product && product.suppliers.length > 0) {
-                    const supplierId = product.suppliers[0].supplierId; // simplified logic
+                    const supplierId = product.suppliers[0].supplier_id; // simplified logic
                     costBySupplier[supplierId] = (costBySupplier[supplierId] || 0) + (item.price * item.quantity);
                 }
             });
@@ -84,7 +84,7 @@ export const ExpenseManager: React.FC = () => {
             top5Teachers, dataByTeacher,
             costByCycle, costByModule, costByGroup, costBySupplier
         };
-    }, [orders, sales, users, assignments, groups, modules, trainingCycles, suppliers, products]);
+    }, [orders, sales, users, assignments, groups, modules, training_cycles, suppliers, products]);
 
     return (
         <div>
@@ -107,7 +107,7 @@ export const ExpenseManager: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <Card title="Gasto por Ciclo Formativo">
                     <ul className="space-y-2">
-                        {trainingCycles.map(cycle => (
+                        {training_cycles.map((cycle: any) => (
                             <li key={cycle.id} className="flex justify-between items-center text-sm">
                                 <span>{cycle.name}</span>
                                 <span className="font-semibold">{formatCurrency(analysisData.costByCycle[cycle.id] || 0)}</span>

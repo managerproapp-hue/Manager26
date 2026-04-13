@@ -22,7 +22,7 @@ export const CompanyData: React.FC = () => {
     setFormState({ ...formState, [name]: isNumber ? parseFloat(value) : value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logo' | 'printLogo') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logo' | 'print_logo') => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
@@ -81,10 +81,10 @@ export const CompanyData: React.FC = () => {
             </div>
             <div>
                 <label className="block text-sm font-medium">Logo para Documentos (Impresión)</label>
-                <input type="file" name="printLogo" accept="image/png, image/jpeg" onChange={(e) => handleFileChange(e, 'printLogo')} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"/>
+                <input type="file" name="print_logo" accept="image/png, image/jpeg" onChange={(e) => handleFileChange(e, 'print_logo')} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"/>
             </div>
             <div className="flex justify-center">
-                <img src={formState.printLogo} alt="Print Logo Preview" className="h-16 w-auto bg-white p-2 rounded-md shadow-sm"/>
+                <img src={formState.print_logo} alt="Print Logo Preview" className="h-16 w-auto bg-white p-2 rounded-md shadow-sm"/>
             </div>
           </div>
 
@@ -93,7 +93,7 @@ export const CompanyData: React.FC = () => {
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium">Encargado de Almacén</label>
-                    <select name="managerUserId" value={formState.managerUserId} onChange={handleFormChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600">
+                    <select name="manager_user_id" value={formState.manager_user_id} onChange={handleFormChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600">
                         <option value="">-- Seleccionar Encargado --</option>
                         {managerUsers.map(user => (
                             <option key={user.id} value={user.id}>{user.name}</option>
@@ -102,7 +102,7 @@ export const CompanyData: React.FC = () => {
                 </div>
                  <div>
                     <label className="block text-sm font-medium">Presupuesto por Defecto (€)</label>
-                    <input type="number" name="defaultBudget" value={formState.defaultBudget} onChange={handleFormChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"/>
+                    <input type="number" name="default_budget" value={formState.default_budget} onChange={handleFormChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"/>
                 </div>
             </div>
 

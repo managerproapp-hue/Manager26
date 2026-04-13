@@ -12,8 +12,8 @@ const spanishMonths = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "J
 
 const getEventStatus = (event: Event) => {
     const now = new Date();
-    const startDate = new Date(event.startDate);
-    const endDate = new Date(event.endDate);
+    const startDate = new Date(event.start_date);
+    const endDate = new Date(event.end_date);
     
     if (event.status === 'Inactivo') return { text: 'Inactivo', color: 'bg-gray-200 text-gray-800' };
     if (now > endDate) return { text: 'Cerrado', color: 'bg-red-200 text-red-800' };
@@ -69,11 +69,11 @@ export const EventManager: React.FC = () => {
                         id: `evt-auto-${year}-${weekOfYear}`,
                         name: eventName,
                         type: 'Regular',
-                        startDate: orderOpenDate.toISOString(),
-                        endDate: orderCloseDate.toISOString(),
-                        budgetPerTeacher: companyInfo.defaultBudget || 300,
+                        start_date: orderOpenDate.toISOString(),
+                        end_date: orderCloseDate.toISOString(),
+                        budget_per_teacher: companyInfo.default_budget || 300,
                         status: 'Inactivo',
-                        authorizedTeachers: [],
+                        authorized_teachers: [],
                     };
                     generatedEvents.push(newEvent);
                 }
@@ -124,19 +124,19 @@ export const EventManager: React.FC = () => {
             return {
                 Nombre: event.name,
                 Tipo: event.type,
-                Inicio: new Date(event.startDate).toLocaleString(),
-                Fin: new Date(event.endDate).toLocaleString(),
-                Presupuesto: event.budgetPerTeacher,
+                Inicio: new Date(event.start_date).toLocaleString(),
+                Fin: new Date(event.end_date).toLocaleString(),
+                Presupuesto: event.budget_per_teacher,
                 Estado: status.text,
                 Profesores_Autorizados: event.type === 'Extraordinario' 
-                    ? event.authorizedTeachers?.map(id => teachers.find(t => t.id === id)?.name).join(', ') || 'Todos'
+                    ? event.authorized_teachers?.map(id => teachers.find(t => t.id === id)?.name).join(', ') || 'Todos'
                     : 'Todos'
             }
         });
         exportToCsv('eventos.csv', dataToExport);
     }
 
-    const sortedEvents = useMemo(() => [...events].sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()), [events]);
+    const sortedEvents = useMemo(() => [...events].sort((a,b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()), [events]);
 
     return (
         <div>
@@ -176,9 +176,9 @@ export const EventManager: React.FC = () => {
                                 <tr key={event.id} className="border-b dark:border-gray-700">
                                     <td className="px-4 py-2 font-medium">{event.name}</td>
                                     <td className="px-4 py-2">{event.type}</td>
-                                    <td className="px-4 py-2">{new Date(event.startDate).toLocaleString()}</td>
-                                    <td className="px-4 py-2">{new Date(event.endDate).toLocaleString()}</td>
-                                    <td className="px-4 py-2">{event.budgetPerTeacher.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                    <td className="px-4 py-2">{new Date(event.start_date).toLocaleString()}</td>
+                                    <td className="px-4 py-2">{new Date(event.end_date).toLocaleString()}</td>
+                                    <td className="px-4 py-2">{event.budget_per_teacher.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
                                     <td className="px-4 py-2">
                                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${status.color}`}>
                                             {status.text}
@@ -273,10 +273,10 @@ const EventFormModal: React.FC<{ event: Event | null; onClose: () => void; onSav
     const { companyInfo } = useCompany();
     const [formState, setFormState] = useState<Event>(event || { 
         id: '', name: '', type: 'Regular', 
-        startDate: new Date().toISOString(), 
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), 
-        budgetPerTeacher: companyInfo.defaultBudget || 300, 
-        authorizedTeachers: [],
+        start_date: new Date().toISOString(), 
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), 
+        budget_per_teacher: companyInfo.default_budget || 300, 
+        authorized_teachers: [],
         status: 'Activo'
     });
 
@@ -286,7 +286,7 @@ const EventFormModal: React.FC<{ event: Event | null; onClose: () => void; onSav
     };
     
     const handleAuthTeacherChange = (selection: string[]) => {
-        setFormState({...formState, authorizedTeachers: selection});
+        setFormState({...formState, authorized_teachers: selection});
     }
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -320,21 +320,21 @@ const EventFormModal: React.FC<{ event: Event | null; onClose: () => void; onSav
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label>Fecha Inicio</label>
-                        <input type="datetime-local" name="startDate" value={formState.startDate.substring(0, 16)} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600" />
+                        <input type="datetime-local" name="start_date" value={formState.start_date.substring(0, 16)} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600" />
                     </div>
                     <div>
                         <label>Fecha Fin</label>
-                        <input type="datetime-local" name="endDate" value={formState.endDate.substring(0, 16)} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600" />
+                        <input type="datetime-local" name="end_date" value={formState.end_date.substring(0, 16)} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600" />
                     </div>
                 </div>
                 <div>
                     <label>Presupuesto por Profesor (€)</label>
-                    <input type="number" name="budgetPerTeacher" value={formState.budgetPerTeacher} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600" />
+                    <input type="number" name="budget_per_teacher" value={formState.budget_per_teacher} onChange={handleChange} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600" />
                 </div>
                 {formState.type === 'Extraordinario' && (
                      <div>
                         <label>Profesores Autorizados (dejar vacío para todos)</label>
-                        <MultiSelectTeachers teachers={teachers} selected={formState.authorizedTeachers || []} onChange={handleAuthTeacherChange} />
+                        <MultiSelectTeachers teachers={teachers} selected={formState.authorized_teachers || []} onChange={handleAuthTeacherChange} />
                     </div>
                 )}
                 

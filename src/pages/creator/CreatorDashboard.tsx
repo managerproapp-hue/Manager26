@@ -74,7 +74,7 @@ export const CreatorDashboard: React.FC = () => {
             </div>
              <div>
               <label className="block text-sm font-medium">Nombre de la Aplicación</label>
-              <input type="text" name="appName" value={formState.appName || ''} onChange={handleFormChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-primary-500 focus:ring-primary-500"/>
+              <input type="text" name="app_name" value={formState.app_name || ''} onChange={handleFormChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-primary-500 focus:ring-primary-500"/>
             </div>
             <button type="submit" className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 no-print">Guardar Firma</button>
           </form>
