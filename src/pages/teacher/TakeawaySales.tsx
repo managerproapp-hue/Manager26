@@ -5,6 +5,7 @@ import { Card } from '../../components/Card';
 import { Modal } from '../../components/Modal';
 import { PlusIcon, TrashIcon, PencilIcon } from '../../components/icons';
 import { SaleItem } from '../../types';
+import { AllergenSelector } from './RecipeForm'; // Importar desde RecipeForm
 
 const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Partial<SaleItem>) => void; onClose: () => void; }> = ({ saleItem, onSave, onClose }) => {
     const { recipes } = useData();
@@ -14,7 +15,7 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
         description: saleItem?.description || '',
         price: saleItem?.price || 0,
         rations: saleItem?.rations || 0,
-        allergens: saleItem?.allergens.join(', ') || '',
+        allergens: saleItem?.allergens || [],
         notes: saleItem?.notes || '',
         status: saleItem?.status || 'Preparacion',
         sale_date: saleItem?.sale_date || new Date().toISOString().split('T')[0],
@@ -31,7 +32,7 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
                 name: recipe.name,
                 description: recipe.description,
                 price: recipe.price,
-                allergens: (recipe.selected_allergens || []).join(', ')
+                allergens: recipe.selected_allergens || []
             }));
         }
     };
@@ -45,7 +46,6 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
         e.preventDefault();
         onSave({
             ...formState,
-            allergens: formState.allergens.split(',').map(a => a.trim()).filter(a => a !== ''),
             workspace_id: 'workspace-1', // Placeholder
             created_at: new Date().toISOString()
         });
@@ -60,6 +60,10 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
                         <option value="">Selecciona una receta...</option>
                         {recipes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Alérgenos</label>
+                    <AllergenSelector selected={formState.allergens} onChange={(allergens: string[]) => setFormState(prev => ({ ...prev, allergens }))} />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>

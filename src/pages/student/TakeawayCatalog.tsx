@@ -61,7 +61,7 @@ export const TakeawayCatalog: React.FC = () => {
                                 <div className="mt-4 p-2 bg-green-100 text-green-800 rounded-md text-sm text-center">
                                     Reservado
                                 </div>
-                            ) : (
+                            ) : currentUser ? (
                                 <button 
                                     onClick={() => handleReserve(item.id)}
                                     disabled={isReserving === item.id}
@@ -69,6 +69,10 @@ export const TakeawayCatalog: React.FC = () => {
                                 >
                                     {isReserving === item.id ? 'Reservando...' : 'Reservar'}
                                 </button>
+                            ) : (
+                                <div className="mt-4 p-2 bg-yellow-100 text-yellow-800 rounded-md text-sm text-center">
+                                    Inicia sesión para reservar
+                                </div>
                             )}
                         </Card>
                     );

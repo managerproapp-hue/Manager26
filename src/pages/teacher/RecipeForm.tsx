@@ -11,7 +11,7 @@ import { calculateIngredientCost, areUnitsCompatible } from '../../lib/unitConve
 import { ALLERGENS_LIST, ALLERGEN_ICONS } from '../../lib/allergens';
 import { AlertTriangle } from 'lucide-react';
 
-const AllergenSelector: React.FC<{ selected: string[], onChange: (allergens: string[]) => void }> = ({ selected, onChange }) => {
+export const AllergenSelector: React.FC<{ selected: string[], onChange: (allergens: string[]) => void }> = ({ selected, onChange }) => {
     return (
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-4">
             {ALLERGENS_LIST.map(allergen => {
