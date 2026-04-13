@@ -325,6 +325,29 @@ export interface Service {
     status: 'Planificación' | 'Confirmado' | 'Completado';
 }
 
+export interface SaleItem {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    rations: number;
+    allergens: string[];
+    notes?: string;
+    workspace_id: string;
+    status: 'Activo' | 'Inactivo';
+    created_at: string; // ISO string
+}
+
+export interface Reservation {
+    id: string;
+    sale_item_id: string;
+    user_id: string;
+    user_name: string;
+    quantity: number;
+    notes?: string;
+    created_at: string; // ISO string
+}
+
 export interface AppData {
     users: User[];
     products: Product[];
@@ -338,6 +361,8 @@ export interface AppData {
     assignments: Assignment[];
     recipes: Recipe[];
     sales: Sale[];
+    sale_items: SaleItem[];
+    reservations: Reservation[];
     mini_economato_stock: StockItem[];
     messages: Message[];
     classrooms: Classroom[];

@@ -46,6 +46,7 @@ import { OrderPortal } from './pages/teacher/OrderPortal';
 import { OrderForm } from './pages/teacher/OrderForm';
 import { TeacherOrderHistory } from './pages/teacher/TeacherOrderHistory';
 import { SalesManager } from './pages/teacher/SalesManager';
+import { TakeawaySales } from './pages/teacher/TakeawaySales';
 import { RecipeManager } from './pages/teacher/RecipeManager';
 import { RecipeForm } from './pages/teacher/RecipeForm';
 import { ServiceViewer } from './pages/teacher/ServiceViewer';
@@ -151,6 +152,7 @@ const AppContent: React.FC = () => {
               <Route path="order-portal/edit/:orderId" element={<OrderForm />} />
               <Route path="order-history" element={<TeacherOrderHistory />} />
               <Route path="sales" element={<SalesManager />} />
+              <Route path="takeaway-sales" element={<TakeawaySales />} />
               <Route path="recipes" element={<RecipeManager />} />
               <Route path="recipes/new" element={<RecipeForm />} />
               <Route path="recipes/edit/:recipeId" element={<RecipeForm />} />

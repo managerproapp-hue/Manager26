@@ -110,6 +110,12 @@ export const demoData: AppData = {
     sales: [
         { id: 'sale-1', teacher_id: 'teacher-1', date: new Date().toISOString(), amount: 150.75, category: 'Menú del Día' }
     ],
+    sale_items: [
+        { id: 'sale-item-1', name: 'Lentejas con Chorizo', description: 'Lentejas caseras con chorizo y morcilla', price: 5.00, rations: 20, allergens: ['Gluten', 'Sulfitos'], workspace_id: 'workspace-1', status: 'Activo', created_at: new Date().toISOString() }
+    ],
+    reservations: [
+        { id: 'res-1', sale_item_id: 'sale-item-1', user_id: 'student-2', user_name: 'Elena Rodriguez', quantity: 1, created_at: new Date().toISOString() }
+    ],
     mini_economato_stock: [
         { id: 'prod-2', stock: 50, min_stock: 20 },
         { id: 'prod-3', stock: 10, min_stock: 15 }

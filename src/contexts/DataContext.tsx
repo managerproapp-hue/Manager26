@@ -8,7 +8,7 @@ import {
     User, Product, Supplier, Event, Order, Incident, 
     TrainingCycle, Module, Group, Assignment, Recipe, StockItem, Sale, Message,
     Classroom, ClassroomProduct, ClassroomSupplier, ClassroomEvent, ClassroomOrder,
-    ServiceGroup, Service, WorkspaceSettings
+    ServiceGroup, Service, WorkspaceSettings, SaleItem, Reservation
 } from '../types';
 
 export interface DataContextType {
@@ -24,6 +24,8 @@ export interface DataContextType {
     assignments: Assignment[];
     recipes: Recipe[];
     sales: Sale[];
+    sale_items: SaleItem[];
+    reservations: Reservation[];
     mini_economato_stock: StockItem[];
     messages: Message[];
     classrooms: Classroom[];
@@ -46,6 +48,8 @@ export interface DataContextType {
     setAssignments: (data: Assignment[] | ((prev: Assignment[]) => Assignment[])) => void;
     setRecipes: (data: Recipe[] | ((prev: Recipe[]) => Recipe[])) => void;
     setSales: (data: Sale[] | ((prev: Sale[]) => Sale[])) => void;
+    setSaleItems: (data: SaleItem[] | ((prev: SaleItem[]) => SaleItem[])) => void;
+    setReservations: (data: Reservation[] | ((prev: Reservation[]) => Reservation[])) => void;
     setMiniEconomatoStock: (data: StockItem[] | ((prev: StockItem[]) => StockItem[])) => void;
     setMessages: (data: Message[] | ((prev: Message[]) => Message[])) => void;
     setClassrooms: (data: Classroom[] | ((prev: Classroom[]) => Classroom[])) => void;
@@ -75,6 +79,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [assignments, setAssignmentsState] = useState<Assignment[]>([]);
     const [recipes, setRecipesState] = useState<Recipe[]>([]);
     const [sales, setSalesState] = useState<Sale[]>([]);
+    const [sale_items, setSaleItemsState] = useState<SaleItem[]>([]);
+    const [reservations, setReservationsState] = useState<Reservation[]>([]);
     const [mini_economato_stock, setMiniEconomatoStockState] = useState<StockItem[]>([]);
     const [messages, setMessagesState] = useState<Message[]>([]);
     const [classrooms, setClassroomsState] = useState<Classroom[]>([]);
@@ -106,6 +112,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             { name: 'assignments', setter: setAssignmentsState },
             { name: 'recipes', setter: setRecipesState },
             { name: 'sales', setter: setSalesState },
+            { name: 'sale_items', setter: setSaleItemsState },
+            { name: 'reservations', setter: setReservationsState },
             { name: 'mini_economato_stock', setter: setMiniEconomatoStockState },
             { name: 'messages', setter: setMessagesState },
             { name: 'classrooms', setter: setClassroomsState },
@@ -182,6 +190,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const setAssignments = (data: any) => updateCollection('assignments', data, assignments);
     const setRecipes = (data: any) => updateCollection('recipes', data, recipes);
     const setSales = (data: any) => updateCollection('sales', data, sales);
+    const setSaleItems = (data: any) => updateCollection('sale_items', data, sale_items);
+    const setReservations = (data: any) => updateCollection('reservations', data, reservations);
     const setMiniEconomatoStock = (data: any) => updateCollection('mini_economato_stock', data, mini_economato_stock);
     const setMessages = (data: any) => updateCollection('messages', data, messages);
     const setClassrooms = (data: any) => updateCollection('classrooms', data, classrooms);
@@ -227,9 +237,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         users, products, suppliers, events, orders, incidents, 
         training_cycles, modules, groups, assignments, recipes, sales, mini_economato_stock, messages,
         classrooms, classroom_products, classroom_suppliers, classroom_events, classroom_orders,
-        service_groups, services, workspaceSettings,
+        service_groups, services, workspaceSettings, sale_items, reservations,
         setUsers, setProducts, setSuppliers, setEvents, setOrders, setIncidents,
         setTrainingCycles, setModules, setGroups, setAssignments, setRecipes, setSales,
+        setSaleItems, setReservations,
         setMiniEconomatoStock, setMessages, setClassrooms, setClassroomProducts,
         setClassroomSuppliers, setClassroomEvents, setClassroomOrders,
         setServiceGroups, setServices, setWorkspaceSettings,
@@ -238,7 +249,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         users, products, suppliers, events, orders, incidents, 
         training_cycles, modules, groups, assignments, recipes, sales, mini_economato_stock, messages,
         classrooms, classroom_products, classroom_suppliers, classroom_events, classroom_orders,
-        service_groups, services, workspaceSettings
+        service_groups, services, workspaceSettings, sale_items, reservations
     ]);
 
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

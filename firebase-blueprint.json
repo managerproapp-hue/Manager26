@@ -150,6 +150,39 @@
         "categoryConfigs": { "type": "array", "items": { "type": "object" } }
       },
       "required": ["workspaceId", "categories"]
+    },
+    "SaleItem": {
+      "title": "SaleItem",
+      "description": "Information about a meal for sale",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "rations": { "type": "number" },
+        "allergens": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Activo", "Inactivo"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "price", "rations", "workspaceId", "status", "createdAt"]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "Reservation for a meal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "saleItemId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "quantity": { "type": "number" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "saleItemId", "userId", "userName", "quantity", "createdAt"]
     }
   },
   "firestore": {
@@ -174,6 +207,8 @@
     "/groups": { "schema": "Group", "description": "Collection of groups" },
     "/assignments": { "schema": "Assignment", "description": "Collection of assignments" },
     "/mini_economato_stock": { "schema": "StockItem", "description": "Collection of mini economato stock" },
-    "/workspace_settings/{workspaceId}": { "schema": "WorkspaceSettings", "description": "Settings specific to a workspace" }
+    "/workspace_settings/{workspaceId}": { "schema": "WorkspaceSettings", "description": "Settings specific to a workspace" },
+    "/sale_items": { "schema": "SaleItem", "description": "Collection of sale items" },
+    "/reservations": { "schema": "Reservation", "description": "Collection of reservations" }
   }
 }

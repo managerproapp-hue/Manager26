@@ -197,5 +197,17 @@ service cloud.firestore {
       allow update: if isApproved() && (isAdmin() || (workspaceId == getUserWorkspace() && isValidWorkspaceSettings(request.resource.data)));
       allow delete: if isAdmin();
     }
+
+    match /sale_items/{saleItemId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher() && validString('name', 1, 100) && validString('description', 0, 500);
+    }
+
+    match /reservations/{reservationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && validString('userName', 1, 100);
+      allow update: if isAuthenticated() && (isTeacher() || isOwner(resource.data.userId));
+      allow delete: if isAdmin() || isTeacher();
+    }
   }
 }

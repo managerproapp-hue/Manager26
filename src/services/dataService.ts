@@ -12,6 +12,8 @@ import {
   Recipe,
   StockItem,
   Sale,
+  SaleItem,
+  Reservation,
   Message,
   Classroom,
   ClassroomProduct,
@@ -136,6 +138,8 @@ export const groups: Group[] = [
 export const assignments: Assignment[] = [];
 export const recipes: Recipe[] = [];
 export const sales: Sale[] = [];
+export const saleItems: SaleItem[] = [];
+export const reservations: Reservation[] = [];
 export const miniEconomatoStock: StockItem[] = [];
 export const messages: Message[] = [];
 export const classrooms: Classroom[] = [];
@@ -159,6 +163,8 @@ export const initialData: AppData = {
   assignments,
   recipes,
   sales,
+  sale_items: saleItems,
+  reservations: reservations,
   mini_economato_stock: miniEconomatoStock,
   messages,
   classrooms,

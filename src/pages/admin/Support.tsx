@@ -62,6 +62,8 @@ export const Support: React.FC = () => {
             classroom_orders: data.classroom_orders,
             service_groups: data.service_groups,
             services: data.services,
+            sale_items: data.sale_items,
+            reservations: data.reservations,
         };
         const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(backupData, null, 2))}`;
         const link = document.createElement("a");
@@ -116,6 +118,8 @@ export const Support: React.FC = () => {
                         data.setClassroomOrders(restoredData.classroom_orders || []);
                         data.setServiceGroups(restoredData.service_groups || []);
                         data.setServices(restoredData.services || []);
+                        data.setSaleItems(restoredData.sale_items || []);
+                        data.setReservations(restoredData.reservations || []);
                         
                         setTimeout(() => {
                              alert("¡Datos restaurados con éxito! La aplicación se recargará.");
