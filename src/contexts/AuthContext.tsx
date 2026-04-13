@@ -51,7 +51,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
-            setCurrentUser(userDoc.data() as User);
+            let userData = userDoc.data() as User;
+            // Migration for users created before the change
+            if (userData.profiles.includes(Profile.STUDENT) && !userData.classroom_id && !SUPER_USER_EMAILS.includes(userData.email)) {
+               userData = {
+                 ...userData,
+                 profiles: [Profile.TEACHER],
+                 activity_status: 'De Baja'
+               };
+               await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+            }
+            setCurrentUser(userData);
           } else {
             // Create user if it doesn't exist
             const userEmail = firebaseUser.email || '';
@@ -111,7 +121,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await setDoc(userDocRef, newUser);
         setCurrentUser(newUser);
       } else {
-        setCurrentUser(userDoc.data() as User);
+        let userData = userDoc.data() as User;
+        // Migration for users created before the change
+        if (userData.profiles.includes(Profile.STUDENT) && !userData.classroom_id && !SUPER_USER_EMAILS.includes(userData.email)) {
+           userData = {
+             ...userData,
+             profiles: [Profile.TEACHER],
+             activity_status: 'De Baja'
+           };
+           await setDoc(userDocRef, userData);
+        }
+        setCurrentUser(userData);
       }
       
       return true;

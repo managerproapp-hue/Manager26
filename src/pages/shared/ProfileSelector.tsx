@@ -25,6 +25,27 @@ export const ProfileSelector: React.FC = () => {
     return <Navigate to="/login" />;
   }
 
+  if (currentUser.activity_status === 'De Baja') {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center items-center">
+        <div className="text-center max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+          <img src={currentUser.avatar} alt="User Avatar" className="w-24 h-24 mx-auto rounded-full mb-4 shadow-lg" />
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Cuenta Inactiva</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Hola {currentUser.name}, tu cuenta ha sido registrada como <strong>Profesor Inactivo</strong>. 
+            Un administrador debe activarla y asignarte los permisos correspondientes antes de que puedas acceder a la plataforma.
+          </p>
+          <button 
+            onClick={logout}
+            className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center items-center">
       <div className="text-center">
