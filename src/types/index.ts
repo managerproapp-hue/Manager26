@@ -328,6 +328,7 @@ export interface Service {
 
 export interface SaleItem {
     id: string;
+    recipe_id: string;
     name: string;
     description?: string;
     price: number;
@@ -337,6 +338,9 @@ export interface SaleItem {
     workspace_id: string;
     status: 'Activo' | 'Inactivo';
     created_at: string; // ISO string
+    sale_date: string; // ISO string
+    pickup_time: string;
+    end_time: string;
 }
 
 export interface Reservation {

@@ -41,6 +41,8 @@ export const TakeawayCatalog: React.FC = () => {
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
                             <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
                             <p className="text-sm">Raciones disponibles: {item.rations}</p>
+                            <p className="text-sm font-semibold">Fecha: {item.sale_date}</p>
+                            <p className="text-sm font-semibold">Recogida: {item.pickup_time} - {item.end_time}</p>
                             <div className="text-sm mt-2">
                                 <p className="font-semibold">Alérgenos:</p>
                                 <div className="flex flex-wrap gap-2 mt-1">

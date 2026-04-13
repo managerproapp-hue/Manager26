@@ -111,7 +111,21 @@ export const demoData: AppData = {
         { id: 'sale-1', teacher_id: 'teacher-1', date: new Date().toISOString(), amount: 150.75, category: 'Menú del Día' }
     ],
     sale_items: [
-        { id: 'sale-item-1', name: 'Lentejas con Chorizo', description: 'Lentejas caseras con chorizo y morcilla', price: 5.00, rations: 20, allergens: ['Gluten', 'Sulfitos'], workspace_id: 'workspace-1', status: 'Activo', created_at: new Date().toISOString() }
+        { 
+            id: 'sale-item-1', 
+            recipe_id: 'rec-1',
+            name: 'Lentejas con Chorizo', 
+            description: 'Lentejas caseras con chorizo y morcilla', 
+            price: 5.00, 
+            rations: 20, 
+            allergens: ['Gluten', 'Sulfitos'], 
+            workspace_id: 'workspace-1', 
+            status: 'Activo', 
+            created_at: new Date().toISOString(),
+            sale_date: new Date().toISOString().split('T')[0],
+            pickup_time: '14:00',
+            end_time: '15:00'
+        }
     ],
     reservations: [
         { id: 'res-1', sale_item_id: 'sale-item-1', user_id: 'student-2', user_name: 'Elena Rodriguez', quantity: 1, created_at: new Date().toISOString() }

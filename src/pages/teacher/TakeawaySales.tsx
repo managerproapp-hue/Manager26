@@ -7,7 +7,9 @@ import { PlusIcon, TrashIcon, PencilIcon } from '../../components/icons';
 import { SaleItem } from '../../types';
 
 const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Partial<SaleItem>) => void; onClose: () => void; }> = ({ saleItem, onSave, onClose }) => {
+    const { recipes } = useData();
     const [formState, setFormState] = useState({
+        recipe_id: saleItem?.recipe_id || '',
         name: saleItem?.name || '',
         description: saleItem?.description || '',
         price: saleItem?.price || 0,
@@ -15,7 +17,24 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
         allergens: saleItem?.allergens.join(', ') || '',
         notes: saleItem?.notes || '',
         status: saleItem?.status || 'Activo',
+        sale_date: saleItem?.sale_date || new Date().toISOString().split('T')[0],
+        pickup_time: saleItem?.pickup_time || '14:00',
+        end_time: saleItem?.end_time || '15:00',
     });
+
+    const handleRecipeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const recipe = recipes.find(r => r.id === e.target.value);
+        if (recipe) {
+            setFormState(prev => ({
+                ...prev,
+                recipe_id: recipe.id,
+                name: recipe.name,
+                description: recipe.description,
+                price: recipe.price,
+                allergens: (recipe.selected_allergens || []).join(', ')
+            }));
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -36,12 +55,29 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
         <Modal isOpen={true} onClose={onClose} title={saleItem ? 'Editar Plato' : 'Nuevo Plato'}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Seleccionar Receta</label>
+                    <select name="recipe_id" value={formState.recipe_id} onChange={handleRecipeChange} required className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                        <option value="">Selecciona una receta...</option>
+                        {recipes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                </div>
+                <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</label>
                     <input type="text" name="name" value={formState.name} onChange={handleChange} required className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
-                    <textarea name="description" value={formState.description} onChange={handleChange} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Venta</label>
+                        <input type="date" name="sale_date" value={formState.sale_date} onChange={handleChange} required className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hora Recogida</label>
+                        <input type="time" name="pickup_time" value={formState.pickup_time} onChange={handleChange} required className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Hora Fin</label>
+                        <input type="time" name="end_time" value={formState.end_time} onChange={handleChange} required className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -52,14 +88,6 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Raciones</label>
                         <input type="number" name="rations" value={formState.rations} onChange={handleChange} required className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                     </div>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Alérgenos (separados por coma)</label>
-                    <input type="text" name="allergens" value={formState.allergens} onChange={handleChange} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notas Adicionales</label>
-                    <textarea name="notes" value={formState.notes} onChange={handleChange} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                 </div>
                 <div className="flex justify-end pt-4 space-x-2">
                     <button type="button" onClick={onClose} className="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-md">Cancelar</button>
@@ -110,6 +138,8 @@ export const TakeawaySales: React.FC = () => {
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
                         <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
                         <p className="text-sm">Raciones: {item.rations}</p>
+                        <p className="text-sm">Fecha: {item.sale_date}</p>
+                        <p className="text-sm">Recogida: {item.pickup_time} - {item.end_time}</p>
                         <p className="text-sm">Alérgenos: {item.allergens.join(', ')}</p>
                         <div className="mt-4 flex justify-end space-x-2">
                             <button onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className="text-primary-600 p-1"><PencilIcon className="w-5 h-5"/></button>
