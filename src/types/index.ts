@@ -336,7 +336,7 @@ export interface SaleItem {
     allergens: string[];
     notes?: string;
     workspace_id: string;
-    status: 'Activo' | 'Inactivo';
+    status: 'Activo' | 'Inactivo' | 'Preparacion';
     created_at: string; // ISO string
     sale_date: string; // ISO string
     pickup_time: string;

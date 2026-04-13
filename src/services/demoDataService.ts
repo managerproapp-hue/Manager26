@@ -125,6 +125,21 @@ export const demoData: AppData = {
             sale_date: new Date().toISOString().split('T')[0],
             pickup_time: '14:00',
             end_time: '15:00'
+        },
+        { 
+            id: 'sale-item-2', 
+            recipe_id: 'rec-2',
+            name: 'Ensalada César (Preparación)', 
+            description: 'Ensalada clásica con pollo y aderezo César.', 
+            price: 8.00, 
+            rations: 10, 
+            allergens: ['Gluten'], 
+            workspace_id: 'workspace-1', 
+            status: 'Preparacion', 
+            created_at: new Date().toISOString(),
+            sale_date: new Date().toISOString().split('T')[0],
+            pickup_time: '14:00',
+            end_time: '15:00'
         }
     ],
     reservations: [
