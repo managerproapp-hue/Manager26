@@ -15,7 +15,8 @@ import {
     ClipboardDocumentListIcon, CurrencyEuroIcon, CakeIcon,
     AppleIcon,
     AppLogoIcon,
-    UserGroupIcon
+    UserGroupIcon,
+    ShareIcon
 } from './icons';
 
 const creatorNav = [
@@ -61,6 +62,7 @@ const teacherNav = [
   { name: 'Ventas', href: '/teacher/sales', icon: <CurrencyEuroIcon /> },
   { name: 'Ventas para Llevar', href: '/teacher/takeaway-sales', icon: <ShoppingCartIcon /> },
   { name: 'Reservas', href: '/teacher/reservations', icon: <ClipboardDocumentListIcon /> },
+  { name: 'Notificaciones', href: '/teacher/notifications', icon: <ShareIcon /> },
   { name: 'Aula de Almacén', href: '/teacher/aula', icon: <BookIcon /> },
   { name: 'Mensajería', href: '/teacher/messaging', icon: <MessageIcon /> },
   { name: 'Mi Perfil', href: '/teacher/profile', icon: <ProfileIcon /> },
