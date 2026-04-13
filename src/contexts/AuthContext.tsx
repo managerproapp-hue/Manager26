@@ -2,16 +2,12 @@ import React, { createContext, useContext, useMemo, useEffect, useState } from '
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
   signOut, 
-  User as FirebaseUser,
   signInWithPopup,
   GoogleAuthProvider
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { supabase } from '../lib/supabase';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { User, Profile, SUPER_USER_EMAILS } from '../types';
 
@@ -20,10 +16,6 @@ interface AuthContextType {
   selectedProfile: Profile | null;
   isImpersonating: boolean;
   isAuthReady: boolean;
-  login: (email: string, password?: string) => Promise<{ success: boolean; mustChangePassword?: boolean }>;
-  signUp: (email: string, password?: string) => Promise<boolean>;
-  changePassword: (newPassword: string) => Promise<boolean>;
-  recoverMasterAccount: (email: string, phone: string) => Promise<{ success: boolean; message: string }>;
   loginWithGoogle: () => Promise<boolean>;
   logout: () => void;
   selectProfile: (profile: Profile) => void;
@@ -52,200 +44,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [currentUser, selectedProfile, setSelectedProfile]);
 
   useEffect(() => {
-    // Firebase Auth Listener (Keep for backward compatibility)
-    const unsubscribeFirebase = onAuthStateChanged(auth, async (firebaseUser: any) => {
+    // Firebase Auth Listener
+    const unsubscribeFirebase = onAuthStateChanged(auth, async (firebaseUser) => {
       console.log('Firebase Auth state changed:', firebaseUser?.email);
       if (firebaseUser) {
         try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             setCurrentUser(userDoc.data() as User);
+          } else {
+            // Create user if it doesn't exist
+            const userEmail = firebaseUser.email || '';
+            const newUser: User = {
+              id: firebaseUser.uid,
+              email: userEmail,
+              name: firebaseUser.displayName || userEmail.split('@')[0],
+              profiles: SUPER_USER_EMAILS.includes(userEmail) 
+                ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
+                : [Profile.STUDENT],
+              activity_status: 'Activo',
+              location_status: 'En el centro',
+              avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`
+            };
+            await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+            setCurrentUser(newUser);
           }
         } catch (err) {
           console.error('Firebase sync error:', err);
         }
-      }
-    });
-
-    // Supabase Auth Listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Supabase Auth Event:', event);
-      if (session?.user) {
-        const userEmail = session.user.email;
-        if (userEmail) {
-          // Map Supabase user to our User type
-          const newUser: User = {
-            id: session.user.id,
-            email: userEmail,
-            name: session.user.user_metadata.full_name || userEmail.split('@')[0],
-            profiles: SUPER_USER_EMAILS.includes(userEmail) 
-              ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
-              : [Profile.STUDENT],
-            activity_status: 'Activo',
-            location_status: 'En el centro',
-            avatar: session.user.user_metadata.avatar_url || `https://i.pravatar.cc/150?u=${session.user.id}`
-          };
-          setCurrentUser(newUser);
-          setIsAuthReady(true);
-        }
-      } else if (event === 'SIGNED_OUT') {
+      } else {
         setCurrentUser(null);
         setSelectedProfile(null);
-        setIsAuthReady(true);
-      } else if (event === 'INITIAL_SESSION') {
-        if (!session) setIsAuthReady(true);
       }
+      setIsAuthReady(true);
     });
 
     return () => {
       unsubscribeFirebase();
-      subscription.unsubscribe();
     };
   }, []);
 
-  const login = async (email: string, password?: string): Promise<{ success: boolean; mustChangePassword?: boolean }> => {
-    try {
-      if (!password) return { success: false };
-      
-      // Master user bypass for initial setup or when Supabase is not configured
-      const isMaster = email === 'managerproapp@gmail.com' && password === 'Proteinas@123';
-      
-      if (isMaster) {
-        console.log('Master user login attempt detected');
-      }
-
-      // Try Supabase first
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (!error && data.user) {
-          // Check if user exists in our 'users' table and if they must change password
-          const { data: userData } = await supabase
-            .from('users')
-            .select('must_change_password')
-            .eq('id', data.user.id)
-            .single();
-
-          return { 
-            success: true, 
-            mustChangePassword: userData?.must_change_password || false 
-          };
-        }
-        
-        if (error && !isMaster) {
-          throw error;
-        }
-      } catch (supabaseErr) {
-        console.warn('Supabase login failed:', supabaseErr);
-        if (!isMaster) throw supabaseErr;
-      }
-
-      // If we are here and it's the master user, we allow the bypass
-      if (isMaster) {
-        console.log('Applying master user bypass');
-        const masterUser: User = {
-          id: 'master-bypass-id',
-          email: 'managerproapp@gmail.com',
-          name: 'Master User (Bypass)',
-          profiles: [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT],
-          activity_status: 'Activo',
-          location_status: 'En el centro',
-          avatar: 'https://i.pravatar.cc/150?u=master'
-        };
-        setCurrentUser(masterUser);
-        setIsAuthReady(true);
-        return { success: true, mustChangePassword: false };
-      }
-
-      return { success: false };
-    } catch (error) {
-      console.error('Login error:', error);
-      return { success: false };
-    }
-  };
-
-  const recoverMasterAccount = async (email: string, phone: string): Promise<{ success: boolean; message: string }> => {
-    if (email === 'managerproapp@gmail.com' && phone === '619267431') {
-      // In a real app, this would trigger an email. 
-      // Here we simulate it or provide a way to reset.
-      return { 
-        success: true, 
-        message: 'Se ha enviado una nueva contraseña a tu correo. (Simulado: Usa Proteinas@123 para entrar ahora)' 
-      };
-    }
-    return { success: false, message: 'Datos de recuperación incorrectos.' };
-  };
-
-  const changePassword = async (newPassword: string): Promise<boolean> => {
-    try {
-      if (!currentUser) return false;
-
-      // Update Supabase Auth password
-      const { error: authError } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-      if (authError) throw authError;
-
-      // Update our user record
-      await updateCurrentUser({ must_change_password: false });
-      
-      return true;
-    } catch (error) {
-      console.error('Change password error:', error);
-      return false;
-    }
-  };
-
-  const signUp = async (email: string, password?: string): Promise<boolean> => {
-    try {
-      if (!password) return false;
-      
-      // Sign up in Supabase
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      // Also create in Firebase for sync if needed
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } catch (e) {
-        console.warn('Firebase signup sync failed:', e);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Sign up error:', error);
-      return false;
-    }
-  };
-
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
-      console.log('AuthContext - Starting Google Login (Supabase)');
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
+      console.log('AuthContext - Starting Google Login (Firebase)');
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
       
-      if (error) throw error;
+      const userDocRef = doc(db, 'users', result.user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        const userEmail = result.user.email || '';
+        const newUser: User = {
+          id: result.user.uid,
+          email: userEmail,
+          name: result.user.displayName || userEmail.split('@')[0],
+          profiles: SUPER_USER_EMAILS.includes(userEmail) 
+            ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
+            : [Profile.STUDENT],
+          activity_status: 'Activo',
+          location_status: 'En el centro',
+          avatar: result.user.photoURL || `https://i.pravatar.cc/150?u=${result.user.uid}`
+        };
+        await setDoc(userDocRef, newUser);
+        setCurrentUser(newUser);
+      } else {
+        setCurrentUser(userDoc.data() as User);
+      }
+      
       return true;
     } catch (error: any) {
-      console.error('Supabase login error details:', error);
+      console.error('Firebase login error details:', error);
       return false;
     }
   };
 
   const logout = async () => {
     await signOut(auth);
-    await supabase.auth.signOut();
     setSelectedProfile(null);
     setOriginalUser(null);
     navigate('/login');
@@ -295,19 +170,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if(currentUser) {
         const updatedUser = {...currentUser, ...userData};
         
-        // Update Supabase
-        try {
-            const { error } = await supabase.from('users').upsert(updatedUser);
-            if (error) console.error('Error updating user in Supabase:', error);
-        } catch (err) {
-            console.error('Failed to update user in Supabase:', err);
-        }
-        
-        // Keep Firebase sync for now if needed
         try {
           await setDoc(doc(db, 'users', currentUser.id), updatedUser, { merge: true });
         } catch (e) {
-          console.warn('Firebase sync failed (expected if domain not authorized):', e);
+          console.warn('Firebase sync failed:', e);
         }
 
         setCurrentUser(updatedUser);
@@ -323,10 +189,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       selectedProfile,
       isImpersonating,
       isAuthReady,
-      login,
-      signUp,
-      changePassword,
-      recoverMasterAccount,
       loginWithGoogle,
       logout,
       selectProfile,

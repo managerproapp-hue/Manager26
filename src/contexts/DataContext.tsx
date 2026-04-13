@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo, useCallback, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useContext, useMemo, useEffect, useState } from 'react';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { db } from '../firebase';
 import { useAuth } from './AuthContext';
 import { initialData } from '../services/dataService';
 import { demoData } from '../services/demoDataService';
@@ -83,7 +84,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [services, setServicesState] = useState<Service[]>([]);
     const { currentUser } = useAuth();
 
-    // Helper to sync collection with Supabase
     useEffect(() => {
         if (!currentUser) {
             console.log('DataProvider - No user, skipping listeners');
@@ -114,57 +114,40 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             { name: 'services', setter: setServicesState },
         ];
 
-        const fetchData = async () => {
-            for (const col of collections) {
-                try {
-                    const { data, error } = await supabase.from(col.name).select('*');
-                    if (error) {
-                        console.error(`Error fetching ${col.name}:`, error);
-                    } else if (data) {
-                        col.setter(data);
-                    }
-                } catch (err) {
-                    console.error(`Failed to fetch ${col.name}:`, err);
-                }
-            }
-        };
-
-        fetchData();
-
-        // Realtime subscriptions
-        const channels = collections.map(col => {
-            return supabase
-                .channel(`public:${col.name}`)
-                .on('postgres_changes', { event: '*', schema: 'public', table: col.name }, (payload) => {
-                    console.log(`Change received for ${col.name}:`, payload);
-                    fetchData(); // Simple refresh for now
-                })
-                .subscribe();
+        const unsubscribes = collections.map(col => {
+            return onSnapshot(collection(db, col.name), (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                col.setter(data);
+            }, (error) => {
+                console.error(`Error listening to ${col.name}:`, error);
+            });
         });
 
         return () => {
-            channels.forEach(channel => supabase.removeChannel(channel));
+            unsubscribes.forEach(unsub => unsub());
         };
     }, [currentUser]);
 
-    // Generic update function for Supabase
     const updateCollection = async (collectionName: string, data: any[] | ((prev: any[]) => any[]), currentState: any[]) => {
         const newData = typeof data === 'function' ? data(currentState) : data;
         
-        // Find deleted
         const newIds = new Set(newData.map(item => item.id));
         const deletedIds = currentState.filter(item => !newIds.has(item.id)).map(item => item.id);
         
         try {
-            if (deletedIds.length > 0) {
-                await supabase.from(collectionName).delete().in('id', deletedIds);
+            const batch = writeBatch(db);
+            
+            for (const id of deletedIds) {
+                batch.delete(doc(db, collectionName, id));
             }
             
-            // Upsert new/updated
-            if (newData.length > 0) {
-                const { error } = await supabase.from(collectionName).upsert(newData);
-                if (error) console.error(`Error upserting to ${collectionName}:`, error);
+            for (const item of newData) {
+                if (item.id) {
+                    batch.set(doc(db, collectionName, item.id), item, { merge: true });
+                }
             }
+            
+            await batch.commit();
         } catch (err) {
             console.error(`Failed to update ${collectionName}:`, err);
         }
@@ -197,8 +180,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const items = data[key];
             if (Array.isArray(items) && items.length > 0) {
                 try {
-                    const { error } = await supabase.from(key).upsert(items);
-                    if (error) console.error(`Error seeding ${key}:`, error);
+                    const promises = items.map(item => {
+                        if (item.id) {
+                            return setDoc(doc(db, key, item.id), item, { merge: true });
+                        }
+                        return Promise.resolve();
+                    });
+                    await Promise.all(promises);
                 } catch (err) {
                     console.error(`Failed to seed ${key}:`, err);
                 }
