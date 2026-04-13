@@ -17,7 +17,6 @@ export const TeacherLayout: React.FC = () => {
   const location = useLocation();
   const { companyInfo } = useCompany();
   const { users } = useData();
-
   const managerUser = users.find(u => u.id === companyInfo.manager_user_id);
 
   const defaultColor = '#3b82f6'; // Default blue from theme

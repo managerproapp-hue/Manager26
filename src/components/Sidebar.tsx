@@ -61,6 +61,7 @@ const teacherNav = [
   { name: 'Mis Recetas', href: '/teacher/recipes', icon: <CakeIcon /> },
   { name: 'Ventas', href: '/teacher/sales', icon: <CurrencyEuroIcon /> },
   { name: 'Ventas para Llevar', href: '/teacher/takeaway-sales', icon: <ShoppingCartIcon /> },
+  { name: 'Catálogo de Ventas', href: '/teacher/takeaway-catalog', icon: <ShoppingCartIcon /> },
   { name: 'Reservas', href: '/teacher/reservations', icon: <ClipboardDocumentListIcon /> },
   { name: 'Notificaciones', href: '/teacher/notifications', icon: <ShareIcon /> },
   { name: 'Aula de Almacén', href: '/teacher/aula', icon: <BookIcon /> },
@@ -109,15 +110,6 @@ export const Sidebar: React.FC = () => {
     case Profile.CREATOR:
       navItems = creatorNav;
       break;
-    case Profile.STUDENT:
-        if (currentUser?.student_simulated_profile === Profile.TEACHER) {
-            navItems = rewriteStudentNav(teacherNav.filter(item => item.name !== 'Aula de Almacén' && item.name !== 'Ventas'), '/student');
-        } else if (currentUser?.student_simulated_profile === Profile.ALMACEN) {
-            navItems = rewriteStudentNav(almacenNav, '/student');
-        } else {
-             navItems = [{ name: 'Panel de control', href: '/student/dashboard', icon: <ChartIcon /> }];
-        }
-        break;
     default:
       navItems = [];
   }
