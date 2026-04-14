@@ -11,6 +11,9 @@ import { TrashIcon, PlusIcon } from '../../components/icons';
 
 export const OrderForm: React.FC = () => {
     const { event_id, order_id } = useParams<{ event_id?: string; order_id?: string }>();
+    console.log('--- Debugging Event Finding ---');
+    console.log('Params from URL:', { event_id, order_id });
+    
     const navigate = useNavigate();
     const { events, products, orders, setOrders } = useData();
     const { currentUser } = useAuth();
@@ -22,10 +25,7 @@ export const OrderForm: React.FC = () => {
     const [isDirty, setIsDirty] = useState(false);
 
     const event = useMemo(() => {
-        console.log('--- Debugging Event Finding ---');
         console.log('Events array length:', events.length);
-        console.log('Event ID from params:', event_id);
-        console.log('Order ID from params:', order_id);
         
         const foundEvent = events.find(e => {
             const matchesId = e.id === event_id;
