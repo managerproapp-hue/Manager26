@@ -10,9 +10,9 @@ import { BlockedAccess } from '../shared/BlockedAccess';
 import { TrashIcon, PlusIcon } from '../../components/icons';
 
 export const OrderForm: React.FC = () => {
-    const { event_id, order_id } = useParams<{ event_id?: string; order_id?: string }>();
+    const { eventId, orderId } = useParams<{ eventId?: string; orderId?: string }>();
     console.log('--- Debugging Event Finding ---');
-    console.log('Params from URL:', { event_id, order_id });
+    console.log('Params from URL:', { eventId, orderId });
     
     const navigate = useNavigate();
     const { events, products, orders, setOrders } = useData();
@@ -28,16 +28,16 @@ export const OrderForm: React.FC = () => {
         console.log('Events array length:', events.length);
         
         const foundEvent = events.find(e => {
-            const matchesId = e.id === event_id;
-            const matchesOrder = order_id && orders.find(o => o.id === order_id)?.event_id === e.id;
+            const matchesId = e.id === eventId;
+            const matchesOrder = orderId && orders.find(o => o.id === orderId)?.event_id === e.id;
             return matchesId || matchesOrder;
         });
         
         console.log('Found event:', foundEvent);
         console.log('-------------------------------');
         return foundEvent;
-    }, [events, event_id, order_id, orders]);
-    const existingOrder = useMemo(() => order_id ? orders.find(o => o.id === order_id) : null, [orders, order_id]);
+    }, [events, eventId, orderId, orders]);
+    const existingOrder = useMemo(() => orderId ? orders.find(o => o.id === orderId) : null, [orders, orderId]);
     
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
 
