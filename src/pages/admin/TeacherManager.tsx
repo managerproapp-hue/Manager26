@@ -134,6 +134,11 @@ export const TeacherManager: React.FC = () => {
             </div>
 
             <Card title={activeTab === 'profesores' ? 'Profesores' : activeTab === 'clientes' ? 'Clientes Takeaway' : 'Alumnos'}>
+                {activeTab === 'alumnos' && (
+                    <button onClick={() => setUsers(users.filter(u => !u.profiles.includes(Profile.STUDENT)))} className="mb-4 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+                        Reiniciar lista de alumnos
+                    </button>
+                )}
                 {activeTab === 'profesores' && renderTable(staff)}
                 {activeTab === 'clientes' && renderTable(takeawayCustomers)}
                 {activeTab === 'alumnos' && renderTable(students)}
@@ -231,7 +236,7 @@ const UserFormModal: React.FC<{
         onSave({ ...formState });
     };
 
-    const assignableProfiles = [Profile.ADMIN, Profile.ALMACEN, Profile.TEACHER, Profile.STUDENT, Profile.SALES_MANAGER];
+    const assignableProfiles = [Profile.ADMIN, Profile.ALMACEN, Profile.TEACHER, Profile.STUDENT, Profile.SALES_MANAGER].filter(p => p !== ('manager' as any));
 
     return (
         <Modal isOpen={true} onClose={onClose} title={user ? 'Editar Personal' : 'Nuevo Personal'}>

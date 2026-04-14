@@ -43,11 +43,22 @@ export const OrderForm: React.FC = () => {
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
 
     const filteredProducts = useMemo(() => {
+        if (searchTerm.trim() === '') return [];
         return products.filter(p => 
             p.status === 'Activo' && 
             p.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [products, searchTerm]);
+
+    const groupedProducts = useMemo(() => {
+        const groups: Record<string, Product[]> = {};
+        filteredProducts.forEach(p => {
+            const family = p.family || 'Sin familia';
+            if (!groups[family]) groups[family] = [];
+            groups[family].push(p);
+        });
+        return groups;
+    }, [filteredProducts]);
 
     useEffect(() => {
         if (existingOrder) {
@@ -170,40 +181,74 @@ export const OrderForm: React.FC = () => {
             )}
 
             <Card title="Añadir Productos del Catálogo">
-                <input 
-                    type="text" 
-                    placeholder="Buscar producto..." 
-                    value={searchTerm} 
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="w-full p-2 mb-4 border rounded dark:bg-gray-700"
-                />
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredProducts.map(product => (
-                        <div key={product.id} className="p-3 border rounded-lg dark:border-gray-600">
-                            <h4 className="font-semibold">{product.name}</h4>
-                            <p className="text-sm text-gray-500">{product.suppliers[0]?.price.toFixed(2) || 'N/A'}€ / {product.unit}</p>
-                            <div className="flex gap-2 mt-2">
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    disabled={!isEditable}
-                                    value={pendingQuantities[product.id] || ''}
-                                    onChange={e => setPendingQuantities({...pendingQuantities, [product.id]: parseFloat(e.target.value) || 0})}
-                                    className="w-full p-1 border rounded dark:bg-gray-700"
-                                    placeholder="Cantidad"
-                                />
-                                <button 
-                                    disabled={!isEditable}
-                                    onClick={() => handleQuantityChange(product.id, pendingQuantities[product.id] || 0)}
-                                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                                >
-                                    Agregar
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                <div className="flex gap-2 mb-4">
+                    <input 
+                        type="text" 
+                        placeholder="Buscar producto..." 
+                        value={searchTerm} 
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="w-full p-2 border rounded dark:bg-gray-700"
+                    />
+                    {searchTerm && (
+                        <button onClick={() => setSearchTerm('')} className="bg-gray-200 px-4 py-2 rounded">Limpiar</button>
+                    )}
                 </div>
+                {searchTerm.trim() !== '' && Object.entries(groupedProducts).map(([family, familyProducts]) => (
+                    <div key={family} className="mb-6">
+                        <h3 className="text-lg font-bold mb-3 text-gray-700 dark:text-gray-300 border-b pb-1">{family}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {familyProducts.map(product => (
+                                <div key={product.id} className="p-3 border rounded-lg dark:border-gray-600">
+                                    <h4 className="font-semibold">{product.name}</h4>
+                                    <p className="text-sm text-gray-500">{product.suppliers[0]?.price.toFixed(2) || 'N/A'}€ / {product.unit}</p>
+                                    <div className="flex gap-2 mt-2">
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            disabled={!isEditable}
+                                            value={pendingQuantities[product.id] || ''}
+                                            onChange={e => setPendingQuantities({...pendingQuantities, [product.id]: parseFloat(e.target.value) || 0})}
+                                            className="w-full p-1 border rounded dark:bg-gray-700"
+                                            placeholder="Cantidad"
+                                        />
+                                        <button 
+                                            disabled={!isEditable}
+                                            onClick={() => {
+                                                handleQuantityChange(product.id, pendingQuantities[product.id] || 0);
+                                                setPendingQuantities({...pendingQuantities, [product.id]: 0});
+                                            }}
+                                            className="bg-blue-500 text-white px-2 py-1 rounded"
+                                        >
+                                            Agregar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </Card>
+            <Card title="Productos Agregados al Pedido" className="mt-6">
+                {orderItems.size === 0 ? (
+                    <p className="text-gray-500">No hay productos agregados.</p>
+                ) : (
+                    <div className="space-y-2">
+                        {Array.from(orderItems.entries()).map(([product_id, quantity]) => {
+                            const product = productsMap.get(product_id);
+                            return product ? (
+                                <div key={product_id} className="flex justify-between items-center p-2 border rounded">
+                                    <span>{product.name} - {quantity} {product.unit}</span>
+                                    {isEditable && (
+                                        <button onClick={() => handleQuantityChange(product_id, 0)} className="text-red-500">
+                                            <TrashIcon className="w-5 h-5"/>
+                                        </button>
+                                    )}
+                                </div>
+                            ) : null;
+                        })}
+                    </div>
+                )}
             </Card>
             <Card title="Solicitar Nuevo Producto (fuera de catálogo)" className="mt-6">
                  <form onSubmit={handleAddRequest} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
