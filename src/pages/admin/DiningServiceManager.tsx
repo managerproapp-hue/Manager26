@@ -9,12 +9,13 @@ import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 export const DiningServiceManager: React.FC = () => {
-    const { dining_services } = useData();
+    const { dining_services, services } = useData();
     const { currentUser } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingService, setEditingService] = useState<DiningService | null>(null);
 
     const [formData, setFormData] = useState({
+        service_id: '',
         date: '',
         max_capacity: 40,
         menu_price: 0,
@@ -25,6 +26,7 @@ export const DiningServiceManager: React.FC = () => {
         if (service) {
             setEditingService(service);
             setFormData({
+                service_id: service.service_id || '',
                 date: service.date,
                 max_capacity: service.max_capacity,
                 menu_price: service.menu_price,
@@ -33,6 +35,7 @@ export const DiningServiceManager: React.FC = () => {
         } else {
             setEditingService(null);
             setFormData({
+                service_id: '',
                 date: new Date().toISOString().split('T')[0],
                 max_capacity: 40,
                 menu_price: 15,
@@ -50,6 +53,7 @@ export const DiningServiceManager: React.FC = () => {
             const serviceId = editingService?.id || doc(collection(db, 'dining_services')).id;
             const newService: DiningService = {
                 id: serviceId,
+                service_id: formData.service_id || undefined,
                 date: formData.date,
                 max_capacity: formData.max_capacity,
                 current_pax: editingService ? editingService.current_pax : 0,
@@ -64,6 +68,19 @@ export const DiningServiceManager: React.FC = () => {
         } catch (error) {
             console.error("Error saving dining service:", error);
             alert("Error al guardar el servicio.");
+        }
+    };
+
+    const handleServiceSelect = (id: string) => {
+        const selectedSvc = services.find(s => s.id === id);
+        if (selectedSvc) {
+            setFormData({
+                ...formData,
+                service_id: id,
+                date: new Date(selectedSvc.date).toISOString().split('T')[0]
+            });
+        } else {
+            setFormData({ ...formData, service_id: '' });
         }
     };
 
@@ -101,15 +118,22 @@ export const DiningServiceManager: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {dining_services.sort((a: DiningService, b: DiningService) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((service: DiningService) => (
-                    <Card key={service.id} className="relative">
-                        <div className="absolute top-4 right-4">
-                            {getStatusBadge(service.status)}
-                        </div>
-                        <div className="flex items-center mb-4">
-                            <Calendar className="w-6 h-6 text-primary-500 mr-2" />
-                            <h3 className="text-xl font-bold">{new Date(service.date).toLocaleDateString()}</h3>
-                        </div>
+                {dining_services.sort((a: DiningService, b: DiningService) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((service: DiningService) => {
+                    const linkedService = services.find(s => s.id === service.service_id);
+                    return (
+                        <Card key={service.id} className="relative">
+                            <div className="absolute top-4 right-4">
+                                {getStatusBadge(service.status)}
+                            </div>
+                            <div className="flex items-center mb-4">
+                                <Calendar className="w-6 h-6 text-primary-500 mr-2" />
+                                <div>
+                                    <h3 className="text-xl font-bold">{new Date(service.date).toLocaleDateString()}</h3>
+                                    {linkedService && (
+                                        <p className="text-xs text-gray-500 font-medium">Ref: {linkedService.name}</p>
+                                    )}
+                                </div>
+                            </div>
                         <div className="space-y-2 mb-6">
                             <div className="flex items-center text-gray-600 dark:text-gray-300">
                                 <Users className="w-4 h-4 mr-2" />
@@ -137,7 +161,8 @@ export const DiningServiceManager: React.FC = () => {
                             </button>
                         </div>
                     </Card>
-                ))}
+                );
+            })}
                 {dining_services.length === 0 && (
                     <div className="col-span-full text-center py-12 text-gray-500">
                         No hay servicios de comedor configurados.
@@ -151,6 +176,20 @@ export const DiningServiceManager: React.FC = () => {
                 title={editingService ? 'Editar Servicio' : 'Nuevo Servicio'}
             >
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Servicio de Referencia (Planificación)</label>
+                        <select
+                            value={formData.service_id}
+                            onChange={e => handleServiceSelect(e.target.value)}
+                            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        >
+                            <option value="">-- Seleccionar Servicio Planificado --</option>
+                            {services.map(s => (
+                                <option key={s.id} value={s.id}>{s.name} ({new Date(s.date).toLocaleDateString()})</option>
+                            ))}
+                        </select>
+                        <p className="text-[10px] text-gray-500 mt-1">Selecciona un servicio creado en "Planificación de Servicios" para vincularlo.</p>
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha del Servicio</label>
                         <input

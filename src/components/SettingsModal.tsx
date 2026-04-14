@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Modal } from './Modal';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
-import { WorkspaceSettings, DEFAULT_CATEGORIES } from '../types';
+import { WorkspaceSettings, DEFAULT_CATEGORIES, DEFAULT_CATEGORY_CONFIGS } from '../types';
 import { TrashIcon, PlusIcon } from './icons';
+import { resizeImage } from '../utils/image';
 
 export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { currentUser, updateCurrentUser } = useAuth();
@@ -25,12 +26,31 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     const currentSettings: WorkspaceSettings = workspaceSettings || {
         workspaceId: currentUser?.workspaceId || '',
         categories: DEFAULT_CATEGORIES,
-        categoryConfigs: []
+        categoryConfigs: DEFAULT_CATEGORY_CONFIGS
     };
 
     const handleSaveProfile = async () => {
+        if (!profileForm.teacherName || !profileForm.instituteName) {
+            alert("Por favor, completa el nombre del profesor e instituto.");
+            return;
+        }
         await updateCurrentUser(profileForm);
-        alert("Perfil actualizado correctamente");
+        alert("Perfil y marca actualizados correctamente. El asistente no volverá a aparecer.");
+        if (isProfileIncomplete) {
+            onClose();
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'teacherLogo' | 'instituteLogo') => {
+        if (e.target.files && e.target.files[0]) {
+            try {
+                const resized = await resizeImage(e.target.files[0], 400, 400);
+                setProfileForm(prev => ({ ...prev, [field]: resized }));
+            } catch (error) {
+                console.error("Error resizing image:", error);
+                alert("Error al procesar la imagen.");
+            }
+        }
     };
 
     const handleAddCategory = () => {
@@ -42,7 +62,8 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
 
         const newSettings = {
             ...currentSettings,
-            categories: [...currentSettings.categories, newCategory.trim()].sort()
+            categories: [...currentSettings.categories, newCategory.trim()].sort(),
+            categoryConfigs: [...(currentSettings.categoryConfigs || []), { name: newCategory.trim(), colors: ["#3b82f6", "#60a5fa"] }]
         };
         setWorkspaceSettings(newSettings);
         setNewCategory('');
@@ -182,13 +203,12 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">URL Logo/Firma Profesor</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Logo/Firma Profesor</label>
                                 <input 
-                                    type="text" 
-                                    value={profileForm.teacherLogo}
-                                    onChange={e => setProfileForm({...profileForm, teacherLogo: e.target.value})}
-                                    className="mt-1 block w-full p-2 border rounded dark:bg-gray-700"
-                                    placeholder="https://..."
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={e => handleFileChange(e, 'teacherLogo')}
+                                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                                 />
                                 {profileForm.teacherLogo && (
                                     <img src={profileForm.teacherLogo} alt="Preview" className="mt-2 h-16 w-auto border rounded" />
@@ -209,13 +229,12 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">URL Logo Instituto</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Logo Instituto</label>
                                 <input 
-                                    type="text" 
-                                    value={profileForm.instituteLogo}
-                                    onChange={e => setProfileForm({...profileForm, instituteLogo: e.target.value})}
-                                    className="mt-1 block w-full p-2 border rounded dark:bg-gray-700"
-                                    placeholder="https://..."
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={e => handleFileChange(e, 'instituteLogo')}
+                                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                                 />
                                 {profileForm.instituteLogo && (
                                     <img src={profileForm.instituteLogo} alt="Preview" className="mt-2 h-16 w-auto border rounded" />

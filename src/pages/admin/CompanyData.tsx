@@ -4,9 +4,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useCompany } from '../../contexts/CompanyContext';
 import { Card } from '../../components/Card';
 import { CompanyIcon } from '../../components/icons';
-import { Company, Profile, User, SUPER_USER_EMAILS } from '../../types';
+import { Company, Profile, User, SUPER_USER_EMAILS, DEFAULT_CATEGORY_CONFIGS } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { DEFAULT_CATEGORIES } from '../../types';
+import { resizeImage } from '../../utils/image';
 
 export const CompanyData: React.FC = () => {
   const { companyInfo, setCompanyInfo } = useCompany();
@@ -15,24 +16,35 @@ export const CompanyData: React.FC = () => {
   const [isSaved, setIsSaved] = useState(false);
 
   const [newCategory, setNewCategory] = useState('');
+  
+  // Ensure we have default configs if none exist
   const categories = useMemo(() => workspaceSettings?.categories || DEFAULT_CATEGORIES, [workspaceSettings]);
-  const categoryConfigs = useMemo(() => workspaceSettings?.categoryConfigs || [], [workspaceSettings]);
+  const categoryConfigs = useMemo(() => {
+    if (workspaceSettings?.categoryConfigs && workspaceSettings.categoryConfigs.length > 0) {
+      return workspaceSettings.categoryConfigs;
+    }
+    return DEFAULT_CATEGORY_CONFIGS;
+  }, [workspaceSettings]);
 
   const handleAddCategory = () => {
     if (!newCategory.trim()) return;
     const updatedCategories = [...categories, newCategory.trim()];
+    const newConfig = { name: newCategory.trim(), colors: ["#3b82f6", "#60a5fa"] };
     setWorkspaceSettings({
         ...workspaceSettings!,
-        categories: updatedCategories
+        categories: updatedCategories,
+        categoryConfigs: [...categoryConfigs, newConfig]
     });
     setNewCategory('');
   };
 
   const handleRemoveCategory = (cat: string) => {
     const updatedCategories = categories.filter(c => c !== cat);
+    const updatedConfigs = categoryConfigs.filter(c => c.name !== cat);
     setWorkspaceSettings({
         ...workspaceSettings!,
-        categories: updatedCategories
+        categories: updatedCategories,
+        categoryConfigs: updatedConfigs
     });
   };
 
@@ -40,7 +52,7 @@ export const CompanyData: React.FC = () => {
     const configs = [...categoryConfigs];
     let config = configs.find(c => c.name === catName);
     if (!config) {
-        config = { name: catName, colors: [] };
+        config = { name: catName, colors: ["#cccccc", "#cccccc", "#cccccc"] };
         configs.push(config);
     }
     const newColors = [...config.colors];
@@ -66,18 +78,15 @@ export const CompanyData: React.FC = () => {
     setFormState({ ...formState, [name]: isNumber ? parseFloat(value) : value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logo' | 'print_logo') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'logo' | 'print_logo') => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 500 * 1024) {
-        alert('El archivo es demasiado grande. Por favor, sube una imagen de menos de 500KB.');
-        return;
+      try {
+        const resized = await resizeImage(e.target.files[0], 400, 400);
+        setFormState({ ...formState, [field]: resized });
+      } catch (error) {
+        console.error("Error resizing image:", error);
+        alert("Error al procesar la imagen.");
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormState({ ...formState, [field]: reader.result as string });
-      };
-      reader.readAsDataURL(file);
     }
   };
 

@@ -45,9 +45,17 @@ export interface WorkspaceSettings {
   categoryConfigs?: CategoryConfig[];
 }
 
-export const DEFAULT_CATEGORIES = [
-    "Entrantes", "Principales", "Postres", "Bebidas", "Salsas", "Guarniciones"
+export const DEFAULT_CATEGORY_CONFIGS: CategoryConfig[] = [
+    { name: "Entrantes", colors: ["#3b82f6", "#60a5fa"] },
+    { name: "Principales", colors: ["#ef4444", "#f87171"] },
+    { name: "Postres", colors: ["#ec4899", "#f472b6"] },
+    { name: "Bebidas", colors: ["#10b981", "#34d399"] },
+    { name: "Salsas", colors: ["#f59e0b", "#fbbf24"] },
+    { name: "Guarniciones", colors: ["#8b5cf6", "#a78bfa"] }
 ];
+
+export const DEFAULT_CATEGORIES = DEFAULT_CATEGORY_CONFIGS.map(c => c.name);
+
 
 export interface User {
   id: string;
@@ -373,6 +381,7 @@ export interface DinerAllergen {
 
 export interface DiningService {
   id: string;
+  service_id?: string; // Link to Service
   date: string;
   max_capacity: number;
   current_pax: number;
