@@ -194,93 +194,92 @@ export const TakeawayCatalog: React.FC = () => {
                         {day}
                     </div>
                     <div className={`p-6 rounded-b-xl rounded-r-xl border-t-4 ${DAY_HEADER_COLORS[day].replace('bg-', 'border-')} ${DAY_COLORS[day].split(' ')[0]} border-2 shadow-sm`}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {items.map(item => {
                                 const cartItem = cart.find(c => c.saleItem.id === item.id);
                                 const isSoldOut = item.rations <= 0;
                                 
                                 return (
-                                    <div key={item.id} className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300 ${isSoldOut ? 'opacity-75' : ''}`}>
-                                        <div className="p-6">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{item.name}</h3>
-                                                <span className="bg-primary-100 text-primary-800 text-sm font-bold px-3 py-1 rounded-full whitespace-nowrap ml-2">
+                                    <div key={item.id} className={`bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow duration-300 ${isSoldOut ? 'opacity-75' : ''}`}>
+                                        <div className="p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{item.name}</h3>
+                                                <span className="bg-primary-100 text-primary-800 text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ml-2">
                                                     {item.price.toFixed(2)} €
                                                 </span>
                                             </div>
                                             
-                                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+                                            <p className="text-gray-600 dark:text-gray-400 text-xs mb-3 line-clamp-2">
                                                 {item.description}
                                             </p>
 
-                                            <div className="space-y-2 mb-6">
-                                                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                                    <UserIcon className="w-4 h-4 mr-2 text-primary-500" />
+                                            <div className="space-y-1 mb-4">
+                                                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                                    <UserIcon className="w-3 h-3 mr-1 text-primary-500" />
                                                     <span className="font-medium">Vendido por:</span>
                                                     <span className="ml-1 text-gray-900 dark:text-gray-200">{item.teacher_name || item.group_name || 'Profesor'}</span>
                                                 </div>
-                                                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                                    <Calendar className="w-4 h-4 mr-2 text-primary-500" />
+                                                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                                    <Calendar className="w-3 h-3 mr-1 text-primary-500" />
                                                     <span>{item.sale_date}</span>
                                                 </div>
-                                                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                                    <Clock className="w-4 h-4 mr-2 text-primary-500" />
+                                                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                                    <Clock className="w-3 h-3 mr-1 text-primary-500" />
                                                     <span>{item.pickup_time} - {item.end_time}</span>
                                                 </div>
-                                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">
                                                     <span className="font-medium">Raciones disponibles:</span>
                                                     <span className="ml-1 font-bold text-primary-600">{item.rations}</span>
                                                 </div>
                                             </div>
 
-                                            <div className="mb-6">
-                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Alérgenos</p>
-                                                <div className="flex flex-wrap gap-3">
+                                            <div className="mb-4">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Alérgenos</p>
+                                                <div className="flex flex-wrap gap-1">
                                                     {item.allergens.length > 0 ? item.allergens.map(allergen => {
                                                         const Icon = ALLERGEN_ICONS[allergen] || AlertTriangle;
                                                         return (
                                                             <div key={allergen} className="group relative flex flex-col items-center" title={allergen}>
-                                                                <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg group-hover:bg-primary-50 dark:group-hover:bg-primary-900 transition-colors">
-                                                                    <Icon className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:text-primary-600" />
+                                                                <div className="p-1 bg-gray-50 dark:bg-gray-700 rounded-md group-hover:bg-primary-50 dark:group-hover:bg-primary-900 transition-colors">
+                                                                    <Icon className="w-3 h-3 text-gray-600 dark:text-gray-300 group-hover:text-primary-600" />
                                                                 </div>
-                                                                <span className="text-[10px] mt-1 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">{allergen}</span>
                                                             </div>
                                                         );
                                                     }) : (
-                                                        <span className="text-xs text-gray-400 italic">Sin alérgenos declarados</span>
+                                                        <span className="text-[10px] text-gray-400 italic">Sin alérgenos</span>
                                                     )}
                                                 </div>
                                             </div>
 
                                             {cartItem ? (
-                                                <div className="flex items-center justify-between bg-primary-50 dark:bg-primary-900/20 p-2 rounded-xl border border-primary-200 dark:border-primary-800">
+                                                <div className="flex items-center justify-between bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-lg border border-primary-200 dark:border-primary-800">
                                                     <button 
                                                         onClick={() => updateQuantity(item.id, -1)}
-                                                        className="p-2 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-lg transition-colors"
+                                                        className="p-1 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-md transition-colors"
                                                     >
-                                                        <Minus className="w-5 h-5" />
+                                                        <Minus className="w-4 h-4" />
                                                     </button>
-                                                    <span className="font-bold text-primary-800 dark:text-primary-200">
-                                                        {cartItem.quantity} en carrito
+                                                    <span className="font-bold text-xs text-primary-800 dark:text-primary-200">
+                                                        {cartItem.quantity}
                                                     </span>
                                                     <button 
                                                         onClick={() => updateQuantity(item.id, 1)}
                                                         disabled={cartItem.quantity >= item.rations}
-                                                        className="p-2 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-lg transition-colors disabled:opacity-50"
+                                                        className="p-1 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-md transition-colors disabled:opacity-50"
                                                     >
-                                                        <Plus className="w-5 h-5" />
+                                                        <Plus className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             ) : isSoldOut ? (
-                                                <div className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold text-center border border-gray-200 dark:border-gray-600">
+                                                <div className="w-full py-2 px-3 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg font-bold text-xs text-center border border-gray-200 dark:border-gray-600">
                                                     Agotado
                                                 </div>
                                             ) : (
                                                 <button 
                                                     onClick={() => addToCart(item)}
-                                                    className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-4 rounded-xl font-bold transition-colors shadow-lg shadow-primary-200 dark:shadow-none"
+                                                    className="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 px-3 rounded-lg font-bold text-xs transition-colors shadow-md shadow-primary-200 dark:shadow-none"
                                                 >
-                                                    Añadir al carrito
+                                                    Añadir
                                                 </button>
                                             )}
                                         </div>

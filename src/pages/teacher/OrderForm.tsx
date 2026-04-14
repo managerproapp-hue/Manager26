@@ -21,7 +21,11 @@ export const OrderForm: React.FC = () => {
     const [new_request_form, set_new_request_form] = useState({ product_name: '', quantity: 1, notes: '' });
     const [isDirty, setIsDirty] = useState(false);
 
-    const event = useMemo(() => events.find(e => e.id === event_id || (order_id && orders.find(o => o.id === order_id)?.event_id === e.id)), [events, event_id, order_id, orders]);
+    const event = useMemo(() => {
+        console.log('Events:', events);
+        console.log('Event ID:', event_id);
+        return events.find(e => e.id === event_id || (order_id && orders.find(o => o.id === order_id)?.event_id === e.id));
+    }, [events, event_id, order_id, orders]);
     const existingOrder = useMemo(() => order_id ? orders.find(o => o.id === order_id) : null, [orders, order_id]);
     
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);

@@ -12,7 +12,10 @@ export const OrderPortal: React.FC = () => {
     const { currentUser } = useAuth();
     
     const now = new Date();
-    const activeEvents = events.filter(e => new Date(e.start_date) <= now && new Date(e.end_date) >= now);
+    const upcomingEvents = events
+        .filter(e => e.status !== 'Inactivo' && new Date(e.end_date) >= now)
+        .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+    const activeEvents = upcomingEvents.slice(0, 3);
 
     const getMyOrderForEvent = (event: Event) => {
         return orders.find(o => o.user_id === currentUser?.id && o.event_id === event.id);
