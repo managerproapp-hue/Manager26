@@ -200,13 +200,17 @@ service cloud.firestore {
 
     match /sale_items/{saleItemId} {
       allow read: if true;
-      allow write: if isTeacher() && validString('name', 1, 100) && validString('description', 0, 500);
+      allow create, delete: if isTeacher() && validString('name', 1, 100) && validString('description', 0, 500);
+      allow update: if (isTeacher() && validString('name', 1, 100) && validString('description', 0, 500)) || 
+                    (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rations']) && 
+                     request.resource.data.rations >= 0 && 
+                     request.resource.data.rations < resource.data.rations);
     }
 
     match /reservations/{reservationId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && validString('userName', 1, 100);
-      allow update: if isAuthenticated() && (isTeacher() || isOwner(resource.data.userId));
+      allow create: if validString('user_name', 1, 100) && request.resource.data.quantity is number && request.resource.data.quantity > 0;
+      allow update: if isAuthenticated() && (isTeacher() || isOwner(resource.data.user_id));
       allow delete: if isAdmin() || isTeacher();
     }
   }

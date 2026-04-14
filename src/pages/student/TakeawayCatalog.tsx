@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from 'react';
+import { doc, writeBatch } from 'firebase/firestore';
+import { db } from '../../firebase';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Card } from '../../components/Card';
 import { Reservation, SaleItem } from '../../types';
 import { ALLERGEN_ICONS } from '../../lib/allergens';
-import { AlertTriangle, Calendar, Clock, User as UserIcon } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock, User as UserIcon, ShoppingCart, X, Plus, Minus } from 'lucide-react';
+import { Modal } from '../../components/Modal';
+import { AllergenSelector } from '../teacher/RecipeForm';
 
 const DAYS_OF_WEEK = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -28,29 +31,27 @@ const DAY_HEADER_COLORS: Record<string, string> = {
     'Domingo': 'bg-gray-600',
 };
 
+interface CartItem {
+    saleItem: SaleItem;
+    quantity: number;
+}
+
 export const TakeawayCatalog: React.FC = () => {
-    const { sale_items, reservations, setReservations } = useData();
+    const { sale_items, setSaleItems, reservations, setReservations } = useData();
     const { currentUser } = useAuth();
-    const [isReserving, setIsReserving] = useState<string | null>(null);
+    
+    const [cart, setCart] = useState<CartItem[]>([]);
+    const [isCartOpen, setIsCartOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleReserve = (saleItemId: string) => {
-        if (!currentUser) return;
-        setIsReserving(saleItemId);
+    const activeItems = sale_items.filter(item => {
+        if (item.status !== 'Activo' || item.rations <= 0) return false;
         
-        const newReservation: Reservation = {
-            id: `res-${Date.now()}`,
-            sale_item_id: saleItemId,
-            user_id: currentUser.id,
-            user_name: currentUser.name,
-            quantity: 1,
-            created_at: new Date().toISOString()
-        };
-        
-        setReservations([...reservations, newReservation]);
-        setIsReserving(null);
-    };
-
-    const activeItems = sale_items.filter(item => item.status === 'Activo' && item.rations > 0);
+        // Check if expired
+        const now = new Date();
+        const itemEndDateTime = new Date(`${item.sale_date}T${item.end_time}`);
+        return itemEndDateTime > now;
+    });
 
     const groupedItems = useMemo(() => {
         const groups: Record<string, SaleItem[]> = {};
@@ -61,7 +62,6 @@ export const TakeawayCatalog: React.FC = () => {
             groups[dayName].push(item);
         });
         
-        // Sort days logically (Lunes to Domingo)
         const sortedDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
         return sortedDays.filter(day => groups[day]).map(day => ({
             day,
@@ -69,11 +69,96 @@ export const TakeawayCatalog: React.FC = () => {
         }));
     }, [activeItems]);
 
+    const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+
+    const addToCart = (item: SaleItem) => {
+        setCart(prev => {
+            const existing = prev.find(i => i.saleItem.id === item.id);
+            if (existing) {
+                return prev.map(i => i.saleItem.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+            }
+            return [...prev, { saleItem: item, quantity: 1 }];
+        });
+    };
+
+    const removeFromCart = (itemId: string) => {
+        setCart(prev => prev.filter(i => i.saleItem.id !== itemId));
+    };
+
+    const updateQuantity = (itemId: string, delta: number) => {
+        setCart(prev => prev.map(i => {
+            if (i.saleItem.id === itemId) {
+                const newQ = Math.max(1, i.quantity + delta);
+                // Don't exceed available rations
+                const maxQ = i.saleItem.rations;
+                return { ...i, quantity: Math.min(newQ, maxQ) };
+            }
+            return i;
+        }));
+    };
+
+    const handleConfirmReservation = async (details: { name: string, email: string, phone: string, notes: string, allergens: string[] }) => {
+        setIsSubmitting(true);
+        
+        const newReservations: Reservation[] = cart.map(cartItem => ({
+            id: `res-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            sale_item_id: cartItem.saleItem.id,
+            user_id: currentUser?.id,
+            user_name: details.name,
+            email: details.email,
+            phone: details.phone,
+            allergens: details.allergens,
+            quantity: cartItem.quantity,
+            notes: details.notes,
+            created_at: new Date().toISOString()
+        }));
+
+        try {
+            // Update reservations via context
+            await setReservations([...reservations, ...newReservations]);
+            
+            // Update sale_items rations directly via batch to avoid permission issues with unchanged items
+            const batch = writeBatch(db);
+            cart.forEach(cartItem => {
+                const itemRef = doc(db, 'sale_items', cartItem.saleItem.id);
+                batch.update(itemRef, {
+                    rations: cartItem.saleItem.rations - cartItem.quantity
+                });
+            });
+            await batch.commit();
+
+            setCart([]);
+            setIsCartOpen(false);
+            setIsSuccessOpen(true);
+        } catch (error) {
+            console.error("Error saving reservations", error);
+            alert("Hubo un error al procesar la reserva.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-8 text-center">
-                Catálogo de Comidas para Llevar
-            </h1>
+        <div className="max-w-7xl mx-auto px-4 py-8 relative">
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white text-center flex-1">
+                    Catálogo de Comidas para Llevar
+                </h1>
+                
+                <button 
+                    onClick={() => setIsCartOpen(true)}
+                    className="relative p-3 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors shadow-lg"
+                >
+                    <ShoppingCart className="w-6 h-6" />
+                    {cartItemsCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white dark:border-gray-900">
+                            {cartItemsCount}
+                        </span>
+                    )}
+                </button>
+            </div>
             
             {groupedItems.map(({ day, items }) => (
                 <div key={day} className="mb-12">
@@ -83,13 +168,15 @@ export const TakeawayCatalog: React.FC = () => {
                     <div className={`p-6 rounded-b-xl rounded-r-xl border-t-4 ${DAY_HEADER_COLORS[day].replace('bg-', 'border-')} ${DAY_COLORS[day].split(' ')[0]} border-2 shadow-sm`}>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {items.map(item => {
-                                const userReservation = reservations.find(r => r.sale_item_id === item.id && r.user_id === currentUser?.id);
+                                const cartItem = cart.find(c => c.saleItem.id === item.id);
+                                const isSoldOut = item.rations <= 0;
+                                
                                 return (
-                                    <div key={item.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
+                                    <div key={item.id} className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300 ${isSoldOut ? 'opacity-75' : ''}`}>
                                         <div className="p-6">
                                             <div className="flex justify-between items-start mb-4">
                                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">{item.name}</h3>
-                                                <span className="bg-primary-100 text-primary-800 text-sm font-bold px-3 py-1 rounded-full">
+                                                <span className="bg-primary-100 text-primary-800 text-sm font-bold px-3 py-1 rounded-full whitespace-nowrap ml-2">
                                                     {item.price.toFixed(2)} €
                                                 </span>
                                             </div>
@@ -137,22 +224,36 @@ export const TakeawayCatalog: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            {userReservation ? (
-                                                <div className="w-full py-3 px-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-xl font-bold text-center border border-green-200 dark:border-green-800">
-                                                    ✓ Reservado
+                                            {cartItem ? (
+                                                <div className="flex items-center justify-between bg-primary-50 dark:bg-primary-900/20 p-2 rounded-xl border border-primary-200 dark:border-primary-800">
+                                                    <button 
+                                                        onClick={() => updateQuantity(item.id, -1)}
+                                                        className="p-2 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-lg transition-colors"
+                                                    >
+                                                        <Minus className="w-5 h-5" />
+                                                    </button>
+                                                    <span className="font-bold text-primary-800 dark:text-primary-200">
+                                                        {cartItem.quantity} en carrito
+                                                    </span>
+                                                    <button 
+                                                        onClick={() => updateQuantity(item.id, 1)}
+                                                        disabled={cartItem.quantity >= item.rations}
+                                                        className="p-2 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-lg transition-colors disabled:opacity-50"
+                                                    >
+                                                        <Plus className="w-5 h-5" />
+                                                    </button>
                                                 </div>
-                                            ) : currentUser ? (
-                                                <button 
-                                                    onClick={() => handleReserve(item.id)}
-                                                    disabled={isReserving === item.id}
-                                                    className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-4 rounded-xl font-bold transition-colors shadow-lg shadow-primary-200 dark:shadow-none disabled:bg-gray-400"
-                                                >
-                                                    {isReserving === item.id ? 'Reservando...' : 'Reservar ahora'}
-                                                </button>
+                                            ) : isSoldOut ? (
+                                                <div className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold text-center border border-gray-200 dark:border-gray-600">
+                                                    Agotado
+                                                </div>
                                             ) : (
-                                                <div className="w-full py-3 px-4 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 rounded-xl font-medium text-center border border-yellow-100 dark:border-yellow-800 text-sm">
-                                                    Inicia sesión para reservar
-                                                </div>
+                                                <button 
+                                                    onClick={() => addToCart(item)}
+                                                    className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-4 rounded-xl font-bold transition-colors shadow-lg shadow-primary-200 dark:shadow-none"
+                                                >
+                                                    Añadir al carrito
+                                                </button>
                                             )}
                                         </div>
                                     </div>
@@ -169,6 +270,223 @@ export const TakeawayCatalog: React.FC = () => {
                     <p className="text-xl text-gray-500 dark:text-gray-400 font-medium">No hay platos disponibles para reservar en este momento.</p>
                 </div>
             )}
+
+            {isCartOpen && (
+                <CartModal 
+                    cart={cart} 
+                    onClose={() => setIsCartOpen(false)} 
+                    onConfirm={handleConfirmReservation}
+                    isSubmitting={isSubmitting}
+                    currentUser={currentUser}
+                    updateQuantity={updateQuantity}
+                    removeFromCart={removeFromCart}
+                />
+            )}
+
+            {isSuccessOpen && (
+                <Modal isOpen={true} onClose={() => setIsSuccessOpen(false)} title="¡Reserva Confirmada!">
+                    <div className="text-center py-8">
+                        <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-10 h-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">¡Gracias por tu reserva!</h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-6">
+                            Hemos registrado tu pedido correctamente. Te hemos enviado un correo electrónico con los detalles de tu compra y las instrucciones de recogida.
+                        </p>
+                        <button 
+                            onClick={() => setIsSuccessOpen(false)} 
+                            className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-xl font-bold transition-colors shadow-lg shadow-primary-200 dark:shadow-none"
+                        >
+                            Volver al catálogo
+                        </button>
+                    </div>
+                </Modal>
+            )}
         </div>
+    );
+};
+
+const CartModal: React.FC<{
+    cart: CartItem[], 
+    onClose: () => void, 
+    onConfirm: (details: any) => void,
+    isSubmitting: boolean,
+    currentUser: any,
+    updateQuantity: (id: string, delta: number) => void,
+    removeFromCart: (id: string) => void
+}> = ({ cart, onClose, onConfirm, isSubmitting, currentUser, updateQuantity, removeFromCart }) => {
+    const [name, setName] = useState(currentUser?.name || '');
+    const [email, setEmail] = useState(currentUser?.email || '');
+    const [phone, setPhone] = useState(currentUser?.phone || '');
+    const [notes, setNotes] = useState('');
+    const [userAllergens, setUserAllergens] = useState<string[]>([]);
+
+    const total = cart.reduce((sum, item) => sum + (item.saleItem.price * item.quantity), 0);
+
+    const conflictingAllergens = useMemo(() => {
+        const conflicts = new Set<string>();
+        cart.forEach(cartItem => {
+            cartItem.saleItem.allergens.forEach(a => {
+                if (userAllergens.includes(a)) {
+                    conflicts.add(a);
+                }
+            });
+        });
+        return Array.from(conflicts);
+    }, [cart, userAllergens]);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onConfirm({ name, email, phone, notes, allergens: userAllergens });
+    };
+
+    if (cart.length === 0) {
+        return (
+            <Modal isOpen={true} onClose={onClose} title="Tu Carrito">
+                <div className="text-center py-8">
+                    <ShoppingCart className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">Tu carrito está vacío.</p>
+                    <button onClick={onClose} className="mt-6 bg-primary-600 text-white px-6 py-2 rounded-lg font-medium">
+                        Volver al catálogo
+                    </button>
+                </div>
+            </Modal>
+        );
+    }
+
+    return (
+        <Modal isOpen={true} onClose={onClose} title="Completar Reserva">
+            <div className="max-h-[80vh] overflow-y-auto pr-2">
+                <div className="mb-6 space-y-4">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white border-b pb-2">Resumen de tu pedido</h3>
+                    {cart.map(item => (
+                        <div key={item.saleItem.id} className="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                            <div className="flex-1">
+                                <h4 className="font-bold text-gray-900 dark:text-white">{item.saleItem.name}</h4>
+                                <p className="text-sm text-gray-500">{item.saleItem.price.toFixed(2)} € x {item.quantity}</p>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                                <div className="flex items-center bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <button onClick={() => updateQuantity(item.saleItem.id, -1)} className="p-1 text-gray-500 hover:text-primary-600">
+                                        <Minus className="w-4 h-4" />
+                                    </button>
+                                    <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                                    <button 
+                                        onClick={() => updateQuantity(item.saleItem.id, 1)} 
+                                        disabled={item.quantity >= item.saleItem.rations}
+                                        className="p-1 text-gray-500 hover:text-primary-600 disabled:opacity-50"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <button onClick={() => removeFromCart(item.saleItem.id)} className="text-red-500 hover:text-red-700 p-1">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    <div className="flex justify-between items-center pt-4 border-t">
+                        <span className="font-bold text-lg text-gray-900 dark:text-white">Total:</span>
+                        <span className="font-bold text-2xl text-primary-600">{total.toFixed(2)} €</span>
+                    </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl space-y-4 border border-gray-100 dark:border-gray-700">
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white">Tus Datos</h3>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre completo *</label>
+                            <input 
+                                type="text" 
+                                required 
+                                value={name} 
+                                onChange={e => setName(e.target.value)}
+                                className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-primary-500"
+                                placeholder="Ej. Juan Pérez"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo electrónico *</label>
+                            <input 
+                                type="email" 
+                                required 
+                                value={email} 
+                                onChange={e => setEmail(e.target.value)}
+                                className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-primary-500"
+                                placeholder="Ej. juan@ejemplo.com"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono de contacto *</label>
+                            <input 
+                                type="tel" 
+                                required 
+                                value={phone} 
+                                onChange={e => setPhone(e.target.value)}
+                                className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-primary-500"
+                                placeholder="Ej. 600 123 456"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comentarios (Opcional)</label>
+                            <textarea 
+                                value={notes} 
+                                onChange={e => setNotes(e.target.value)}
+                                className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-primary-500"
+                                placeholder="Alguna indicación especial para la recogida..."
+                                rows={2}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">Intolerancias y Alergias</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Selecciona los alérgenos que no puedes consumir:</p>
+                        <AllergenSelector selected={userAllergens} onChange={setUserAllergens} />
+                        
+                        {conflictingAllergens.length > 0 && (
+                            <div className="mt-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-lg">
+                                <div className="flex items-start">
+                                    <AlertTriangle className="h-6 w-6 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="text-sm font-bold text-red-800 dark:text-red-300">¡Advertencia de Alérgenos!</h4>
+                                        <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+                                            Has seleccionado productos que contienen alérgenos a los que eres intolerante: <strong className="font-extrabold">{conflictingAllergens.join(', ')}</strong>.
+                                        </p>
+                                        <p className="text-sm text-red-700 dark:text-red-400 mt-2">
+                                            Puedes enviar la reserva e intentaremos tenerlo en cuenta, pero <strong className="underline">NO SE GARANTIZA</strong> el cambio o adaptación de estos productos.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end space-x-3 pt-4 border-t">
+                        <button 
+                            type="button" 
+                            onClick={onClose}
+                            className="px-5 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-medium transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-primary-200 dark:shadow-none disabled:opacity-70 flex items-center"
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                                    Procesando...
+                                </>
+                            ) : 'Confirmar Reserva'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
     );
 };

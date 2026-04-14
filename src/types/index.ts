@@ -348,8 +348,11 @@ export interface SaleItem {
 export interface Reservation {
     id: string;
     sale_item_id: string;
-    user_id: string;
+    user_id?: string;
     user_name: string;
+    email?: string;
+    phone?: string;
+    allergens?: string[];
     quantity: number;
     notes?: string;
     created_at: string; // ISO string

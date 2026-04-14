@@ -148,6 +148,24 @@ export const TakeawaySales: React.FC = () => {
     const preparingItems = sale_items.filter(item => item.status === 'Preparacion');
     const activeItems = sale_items.filter(item => item.status === 'Activo');
 
+    const getStatusColor = (item: SaleItem) => {
+        if (item.status === 'Preparacion') return 'border-t-4 border-t-yellow-500 bg-yellow-50/30 dark:bg-yellow-900/10';
+        
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        
+        const itemEndDateTime = new Date(`${item.sale_date}T${item.end_time}`);
+        
+        if (itemEndDateTime < now) return 'border-t-4 border-t-red-500 bg-red-50/30 dark:bg-red-900/10 opacity-75'; // Finalizado/Caducado
+        if (item.sale_date === todayStr) return 'border-t-4 border-t-green-500 bg-green-50/30 dark:bg-green-900/10'; // Hoy
+        if (item.sale_date === tomorrowStr) return 'border-t-4 border-t-blue-500 bg-blue-50/30 dark:bg-blue-900/10'; // Mañana
+        return 'border-t-4 border-t-gray-400 bg-gray-50/30 dark:bg-gray-800/50'; // Futuro
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
@@ -160,7 +178,7 @@ export const TakeawaySales: React.FC = () => {
             <h2 className="text-xl font-semibold mb-4">En Preparación</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {preparingItems.map(item => (
-                    <Card key={item.id} title={item.name}>
+                    <Card key={item.id} title={item.name} className={getStatusColor(item)}>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
                         <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
                         <p className="text-sm">Vendido por: {item.teacher_name || 'Profesor'}</p>
@@ -177,21 +195,31 @@ export const TakeawaySales: React.FC = () => {
 
             <h2 className="text-xl font-semibold mb-4">A la Venta</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activeItems.map(item => (
-                    <Card key={item.id} title={item.name}>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
-                        <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
-                        <p className="text-sm">Vendido por: {item.teacher_name || 'Profesor'}</p>
-                        <p className="text-sm">Raciones: {item.rations}</p>
-                        <p className="text-sm">Fecha: {item.sale_date}</p>
-                        <p className="text-sm">Recogida: {item.pickup_time} - {item.end_time}</p>
-                        <p className="text-sm">Alérgenos: {item.allergens.join(', ')}</p>
-                        <div className="mt-4 flex justify-end space-x-2">
-                            <button onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className="text-primary-600 p-1"><PencilIcon className="w-5 h-5"/></button>
-                            <button onClick={() => handleDelete(item.id)} className="text-red-600 p-1"><TrashIcon className="w-5 h-5"/></button>
-                        </div>
-                    </Card>
-                ))}
+                {activeItems.map(item => {
+                    const isExpired = new Date(`${item.sale_date}T${item.end_time}`) < new Date();
+                    return (
+                        <Card key={item.id} title={item.name} className={getStatusColor(item)}>
+                            <div className="flex justify-between items-start mb-2">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                                {isExpired && (
+                                    <span className="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ml-2">
+                                        Finalizado
+                                    </span>
+                                )}
+                            </div>
+                            <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
+                            <p className="text-sm">Vendido por: {item.teacher_name || 'Profesor'}</p>
+                            <p className="text-sm">Raciones: {item.rations}</p>
+                            <p className="text-sm">Fecha: {item.sale_date}</p>
+                            <p className="text-sm">Recogida: {item.pickup_time} - {item.end_time}</p>
+                            <p className="text-sm">Alérgenos: {item.allergens.join(', ')}</p>
+                            <div className="mt-4 flex justify-end space-x-2">
+                                <button onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className="text-primary-600 p-1"><PencilIcon className="w-5 h-5"/></button>
+                                <button onClick={() => handleDelete(item.id)} className="text-red-600 p-1"><TrashIcon className="w-5 h-5"/></button>
+                            </div>
+                        </Card>
+                    );
+                })}
                 {activeItems.length === 0 && <p className="text-gray-500">No hay platos a la venta.</p>}
             </div>
 

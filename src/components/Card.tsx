@@ -8,8 +8,9 @@ interface CardProps {
 }
 
 export const Card: React.FC<CardProps> = ({ title, icon, children, className = '' }) => {
+  const borderClass = className.includes('border-t-') ? '' : 'border-t-4 border-primary-500';
   return (
-    <div className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg ${className} border-t-4 border-primary-500`}>
+    <div className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg ${className} ${borderClass}`}>
       <div className="p-6">
         {title && (
           <div className="flex items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
