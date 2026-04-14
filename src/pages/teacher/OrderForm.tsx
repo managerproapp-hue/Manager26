@@ -14,6 +14,7 @@ export const OrderForm: React.FC = () => {
     const { currentUser } = useAuth();
     
     const [orderItems, setOrderItems] = useState<Map<string, number>>(new Map());
+    const [pendingQuantities, setPendingQuantities] = useState<Record<string, number>>({});
     const [notes, setNotes] = useState('');
     const [new_requests, set_new_requests] = useState<NewProductRequest[]>([]);
     const [new_request_form, set_new_request_form] = useState({ product_name: '', quantity: 1, notes: '' });
@@ -51,10 +52,13 @@ export const OrderForm: React.FC = () => {
     useEffect(() => {
         if (existingOrder) {
             const itemsMap = new Map<string, number>();
+            const pendingMap: Record<string, number> = {};
             existingOrder.items.forEach(item => {
                 itemsMap.set(item.product_id, item.quantity);
+                pendingMap[item.product_id] = item.quantity;
             });
             setOrderItems(itemsMap);
+            setPendingQuantities(pendingMap);
             setNotes(existingOrder.notes || '');
             set_new_requests(existingOrder.new_product_requests || []);
         }
@@ -178,16 +182,25 @@ export const OrderForm: React.FC = () => {
                         <div key={product.id} className="p-3 border rounded-lg dark:border-gray-600">
                             <h4 className="font-semibold">{product.name}</h4>
                             <p className="text-sm text-gray-500">{product.suppliers[0]?.price.toFixed(2) || 'N/A'}€ / {product.unit}</p>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                disabled={!isEditable}
-                                value={orderItems.get(product.id) || ''}
-                                onChange={e => handleQuantityChange(product.id, parseFloat(e.target.value) || 0)}
-                                className="mt-2 w-full p-1 border rounded dark:bg-gray-700"
-                                placeholder="Cantidad"
-                            />
+                            <div className="flex gap-2 mt-2">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    disabled={!isEditable}
+                                    value={pendingQuantities[product.id] || ''}
+                                    onChange={e => setPendingQuantities({...pendingQuantities, [product.id]: parseFloat(e.target.value) || 0})}
+                                    className="w-full p-1 border rounded dark:bg-gray-700"
+                                    placeholder="Cantidad"
+                                />
+                                <button 
+                                    disabled={!isEditable}
+                                    onClick={() => handleQuantityChange(product.id, pendingQuantities[product.id] || 0)}
+                                    className="bg-blue-500 text-white px-2 py-1 rounded"
+                                >
+                                    Agregar
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
