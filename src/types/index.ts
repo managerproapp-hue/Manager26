@@ -7,6 +7,7 @@ export enum Profile {
   TEACHER = 'teacher',
   STUDENT = 'student',
   SALES_MANAGER = 'sales_manager',
+  CUSTOMER = 'customer',
 }
 
 export const getProfileDisplayName = (profile: Profile, context?: 'student_simulation'): string => {
@@ -20,6 +21,7 @@ export const getProfileDisplayName = (profile: Profile, context?: 'student_simul
     [Profile.TEACHER]: 'Profesor',
     [Profile.STUDENT]: 'Alumno',
     [Profile.SALES_MANAGER]: 'Gestor de Ventas',
+    [Profile.CUSTOMER]: 'Cliente',
   };
   return names[profile] || profile;
 };
@@ -68,6 +70,7 @@ export interface User {
   phone?: string;
   secondary_phone?: string;
   address?: string;
+  allergens?: string[];
   student_simulated_profile?: Profile.TEACHER | Profile.ALMACEN;
   must_change_password?: boolean;
 }

@@ -171,7 +171,7 @@ const AppContent: React.FC = () => {
           </Route>
         </Route>
         
-        <Route element={<ProtectedRoute allowedProfiles={[Profile.STUDENT]} />}>
+        <Route element={<ProtectedRoute allowedProfiles={[Profile.STUDENT, Profile.CUSTOMER]} />}>
           <Route path="/student" element={<StudentLayout />}>
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="takeaway-catalog" element={<TakeawayCatalog />} />

@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Card } from '../../components/Card';
-import { ProfileIcon, ShieldCheckIcon, LockClosedIcon, BookIcon, ClassroomIcon } from '../../components/icons';
+import { ProfileIcon, ShieldCheckIcon, LockClosedIcon, BookIcon, ClassroomIcon, ShoppingCartIcon } from '../../components/icons';
 import { Avatar } from '../../components/Avatar';
 import { Profile, getProfileDisplayName, Message } from '../../types';
+import { Link } from 'react-router-dom';
 
 export const MyProfile: React.FC = () => {
     const { currentUser, updateCurrentUser } = useAuth();
-    const { users, setUsers, setMessages } = useData();
+    const { users, setUsers, setMessages, reservations, sale_items } = useData();
 
     const [personalInfo, setPersonalInfo] = useState({
         name: currentUser?.name || '',
@@ -25,6 +26,11 @@ export const MyProfile: React.FC = () => {
     });
 
     if (!currentUser) return <p>Cargando perfil...</p>;
+
+    const customerReservations = reservations
+        .filter(r => r.user_id === currentUser.id || r.email === currentUser.email)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5);
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -180,6 +186,52 @@ export const MyProfile: React.FC = () => {
                                     }
                                 </div>
                                 <p className="text-xs text-gray-500 pt-2 border-t mt-2">Esta información es de solo lectura y la gestiona tu Profesor.</p>
+                            </div>
+                        </Card>
+                    )}
+                    {currentUser.profiles.includes(Profile.CUSTOMER) && (
+                        <Card title="Últimos Pedidos" icon={<ShoppingCartIcon className="w-8 h-8" />}>
+                            <div className="space-y-4">
+                                {customerReservations.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {customerReservations.map(res => {
+                                            const item = sale_items.find(i => i.id === res.sale_item_id);
+                                            return (
+                                                <div key={res.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+                                                    <div className="font-semibold text-gray-800 dark:text-gray-200">{item?.name || 'Producto no disponible'}</div>
+                                                    <div className="text-gray-500 dark:text-gray-400 mt-1 flex justify-between items-center">
+                                                        <span>{new Date(res.created_at).toLocaleDateString()} - {res.quantity} ud.</span>
+                                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                            res.status === 'recogido' ? 'bg-green-100 text-green-800' :
+                                                            res.status === 'cancelado' ? 'bg-red-100 text-red-800' :
+                                                            'bg-yellow-100 text-yellow-800'
+                                                        }`}>
+                                                            {res.status || 'pendiente'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <div className="pt-2">
+                                            <Link 
+                                                to="/student/takeaway-catalog"
+                                                className="block w-full text-center bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors text-sm font-medium"
+                                            >
+                                                Hacer un nuevo pedido
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                                        <p>Aún no has realizado ningún pedido.</p>
+                                        <Link 
+                                            to="/student/takeaway-catalog"
+                                            className="inline-block mt-4 text-primary-600 hover:text-primary-700 font-medium"
+                                        >
+                                            Ir al catálogo
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
                         </Card>
                     )}

@@ -3,15 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 import { useCreator } from '../../contexts/CreatorContext';
+import { AllergenSelector } from '../teacher/RecipeForm';
 
 export const Login: React.FC = () => {
   console.log('Login component rendering');
-  const { loginWithGoogle, currentUser, selectedProfile } = useAuth();
+  const { loginWithGoogle, loginWithEmail, registerWithEmail, currentUser, selectedProfile } = useAuth();
   const { companyInfo } = useCompany();
   const { creatorInfo } = useCreator();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [allergens, setAllergens] = useState<string[]>([]);
 
   useEffect(() => {
     console.log('Login useEffect - currentUser:', currentUser?.email, 'selectedProfile:', selectedProfile);
@@ -26,9 +35,32 @@ export const Login: React.FC = () => {
     }
   }, [currentUser, selectedProfile, navigate]);
 
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    let success = false;
+    if (isRegistering) {
+      if (!name || !phone) {
+        setError('Por favor, completa todos los campos.');
+        setIsLoading(false);
+        return;
+      }
+      success = await registerWithEmail(email, password, name, phone, allergens);
+    } else {
+      success = await loginWithEmail(email, password);
+    }
+
+    if (!success) {
+      setError(isRegistering ? 'Error al registrarse. Verifica tus datos o intenta con otro correo.' : 'Error al iniciar sesión. Verifica tus credenciales.');
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-200 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-center items-center space-x-8 mb-6">
           {creatorInfo.logo && (
             <img src={creatorInfo.logo} alt="Logotipo de Manager Pro" className="h-16 w-auto object-contain" />
@@ -48,6 +80,85 @@ export const Login: React.FC = () => {
         {error && (
           <div className="mb-4 text-red-500 text-sm text-center font-medium">{error}</div>
         )}
+
+        <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
+          {isRegistering && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alérgenos (Opcional)</label>
+                <div className="border rounded-md p-2 dark:border-gray-600">
+                  <AllergenSelector selected={allergens} onChange={setAllergens} />
+                </div>
+              </div>
+            </>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo Electrónico</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2 px-4 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+          >
+            {isLoading ? 'Procesando...' : (isRegistering ? 'Registrarse' : 'Iniciar Sesión')}
+          </button>
+        </form>
+
+        <div className="text-center mb-6">
+          <button
+            type="button"
+            onClick={() => setIsRegistering(!isRegistering)}
+            className="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400"
+          >
+            {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate para comprar'}
+          </button>
+        </div>
+
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">O continuar con</span>
+          </div>
+        </div>
 
         <div className="space-y-6">
           <button

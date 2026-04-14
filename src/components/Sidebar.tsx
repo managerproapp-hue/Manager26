@@ -127,6 +127,13 @@ export const Sidebar: React.FC = () => {
           navItems.push({ name: 'Mis Reservas', href: '/student/my-reservations', icon: <ClipboardDocumentListIcon /> });
       }
       break;
+    case Profile.CUSTOMER:
+      navItems = [
+          { name: 'Catálogo de Ventas', href: '/student/takeaway-catalog', icon: <ShoppingCartIcon /> },
+          { name: 'Mis Reservas', href: '/student/my-reservations', icon: <ClipboardDocumentListIcon /> },
+          { name: 'Mi Perfil', href: '/student/profile', icon: <ProfileIcon /> },
+      ];
+      break;
     default:
       navItems = [];
   }

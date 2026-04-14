@@ -21,6 +21,10 @@ export const StudentDashboard: React.FC = () => {
         return <Navigate to="/student/almacen-dashboard" replace />;
     }
 
+    if (currentUser.profiles.includes(Profile.CUSTOMER)) {
+        return <Navigate to="/student/takeaway-catalog" replace />;
+    }
+
     return (
         <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Bienvenido al Aula de Almacén</h1>

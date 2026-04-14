@@ -4,7 +4,9 @@ import {
   onAuthStateChanged, 
   signOut, 
   signInWithPopup,
-  GoogleAuthProvider
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -17,6 +19,8 @@ interface AuthContextType {
   isImpersonating: boolean;
   isAuthReady: boolean;
   loginWithGoogle: () => Promise<boolean>;
+  loginWithEmail: (email: string, password: string) => Promise<boolean>;
+  registerWithEmail: (email: string, password: string, name: string, phone: string, allergens: string[]) => Promise<boolean>;
   logout: () => void;
   selectProfile: (profile: Profile) => void;
   impersonateUser: (user: User) => void;
@@ -141,6 +145,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithEmail = async (email: string, password: string): Promise<boolean> => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch (error) {
+      console.error('Email login error:', error);
+      return false;
+    }
+  };
+
+  const registerWithEmail = async (email: string, password: string, name: string, phone: string, allergens: string[]): Promise<boolean> => {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const newUser: User = {
+        id: result.user.uid,
+        email: email,
+        name: name,
+        phone: phone,
+        allergens: allergens,
+        profiles: [Profile.CUSTOMER],
+        activity_status: 'Activo',
+        location_status: 'Fuera del centro',
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+      };
+      await setDoc(doc(db, 'users', result.user.uid), newUser);
+      setCurrentUser(newUser);
+      setSelectedProfile(Profile.CUSTOMER);
+      return true;
+    } catch (error) {
+      console.error('Email registration error:', error);
+      return false;
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
     setSelectedProfile(null);
@@ -212,6 +250,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isImpersonating,
       isAuthReady,
       loginWithGoogle,
+      loginWithEmail,
+      registerWithEmail,
       logout,
       selectProfile,
       impersonateUser,

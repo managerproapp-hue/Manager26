@@ -8,7 +8,7 @@ import { ALLERGEN_ICONS } from '../../lib/allergens';
 import { AlertTriangle, Calendar, Clock, User as UserIcon, ShoppingCart, X, Plus, Minus, ClipboardList } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import { AllergenSelector } from '../teacher/RecipeForm';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const DAYS_OF_WEEK = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -72,7 +72,13 @@ export const TakeawayCatalog: React.FC = () => {
 
     const [isSuccessOpen, setIsSuccessOpen] = useState(false);
 
+    const navigate = useNavigate();
+
     const addToCart = (item: SaleItem) => {
+        if (!currentUser) {
+            navigate('/login');
+            return;
+        }
         setCart(prev => {
             const existing = prev.find(i => i.saleItem.id === item.id);
             if (existing) {
