@@ -192,8 +192,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(newUser);
       setSelectedProfile(Profile.CUSTOMER);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Email registration error details:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       return false;
     }
   };
