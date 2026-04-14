@@ -22,9 +22,20 @@ export const OrderForm: React.FC = () => {
     const [isDirty, setIsDirty] = useState(false);
 
     const event = useMemo(() => {
-        console.log('Events:', events);
-        console.log('Event ID:', event_id);
-        return events.find(e => e.id === event_id || (order_id && orders.find(o => o.id === order_id)?.event_id === e.id));
+        console.log('--- Debugging Event Finding ---');
+        console.log('Events array length:', events.length);
+        console.log('Event ID from params:', event_id);
+        console.log('Order ID from params:', order_id);
+        
+        const foundEvent = events.find(e => {
+            const matchesId = e.id === event_id;
+            const matchesOrder = order_id && orders.find(o => o.id === order_id)?.event_id === e.id;
+            return matchesId || matchesOrder;
+        });
+        
+        console.log('Found event:', foundEvent);
+        console.log('-------------------------------');
+        return foundEvent;
     }, [events, event_id, order_id, orders]);
     const existingOrder = useMemo(() => order_id ? orders.find(o => o.id === order_id) : null, [orders, order_id]);
     
