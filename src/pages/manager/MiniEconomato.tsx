@@ -5,6 +5,7 @@ import { Modal } from '../../components/Modal';
 import { Product, User, Profile, Order, StockItem, Event, OrderItem } from '../../types';
 import { DownloadIcon, PlusIcon, PencilIcon } from '../../components/icons';
 import { printPage } from '../../utils/export';
+import { Link } from 'react-router-dom';
 
 const AssignExpenseModal: React.FC<{product: Product; onClose: () => void; onAssign: (teacherId: string, quantity: number) => void; teachers: User[]}> = ({ product, onClose, onAssign, teachers }) => {
     const [teacherId, setTeacherId] = useState('');
@@ -33,7 +34,7 @@ const AssignExpenseModal: React.FC<{product: Product; onClose: () => void; onAss
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
                      <button type="button" onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-md">Cancelar</button>
-                    <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-md">Asignar Gasto</button>
+                    <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-md">Asignar Producto</button>
                 </div>
             </form>
         </Modal>
@@ -162,7 +163,7 @@ export const MiniEconomato: React.FC = () => {
             item.id === productToAssign.id ? { ...item, stock: item.stock - quantity } : item
         ));
 
-        alert(`Gasto de ${quantity} x ${productToAssign.name} asignado a profesor.`);
+        alert(`Producto ${productToAssign.name} asignado al profesor.`);
         setIsAssignModalOpen(false);
         setProductToAssign(null);
     };
@@ -186,6 +187,9 @@ export const MiniEconomato: React.FC = () => {
                     <button onClick={() => setIsAddModalOpen(true)} className="no-print bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 flex items-center">
                         <PlusIcon className="w-5 h-5 mr-2" /> Añadir Producto
                     </button>
+                    <Link to="/almacen/warehouse-order" className="no-print bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 flex items-center">
+                        <PlusIcon className="w-5 h-5 mr-2" /> Hacer Pedido de Reposición
+                    </Link>
                     <button onClick={printPage} className="no-print bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 flex items-center">
                         <DownloadIcon className="w-5 h-5 mr-2" />
                         Descargar PDF
@@ -207,7 +211,7 @@ export const MiniEconomato: React.FC = () => {
                                     <PencilIcon className="w-4 h-4 inline-block mr-1"/> Editar Stock
                                 </button>
                                 <button onClick={() => handleOpenAssignModal(product)} className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 disabled:bg-gray-400" disabled={stock.stock <= 0}>
-                                    Asignar Gasto
+                                    Asignar Producto
                                 </button>
                             </div>
                         </div>
