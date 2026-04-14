@@ -71,9 +71,6 @@ export const Login: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-200 dark:bg-gray-900 p-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-center items-center space-x-8 mb-6">
-          {creatorInfo.logo && (
-            <img src={creatorInfo.logo} alt="Logotipo de Manager Pro" className="h-16 w-auto object-contain" />
-          )}
           {companyInfo.logo && (
             <img src={companyInfo.logo} alt="Logotipo del IES La Flota" className="h-16 w-auto object-contain" />
           )}
@@ -238,10 +235,7 @@ export const Login: React.FC = () => {
         )}
         
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500">
-             <p>{creatorInfo.copyright}</p>
-             <a href={creatorInfo.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary-400">
-                 {creatorInfo.name}
-             </a>
+             <p>© {new Date().getFullYear()} {companyInfo.name}. Todos los derechos reservados.</p>
         </div>
       </div>
     </div>

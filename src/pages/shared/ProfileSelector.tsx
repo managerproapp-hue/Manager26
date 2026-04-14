@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { getProfileDisplayName } from '../../types';
+import { getProfileDisplayName, Profile, SUPER_USER_EMAILS } from '../../types';
 
 export const ProfileSelector: React.FC = () => {
   const { currentUser, selectedProfile, selectProfile, logout, isAuthReady } = useAuth();
@@ -49,12 +49,22 @@ export const ProfileSelector: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center items-center">
       <div className="text-center">
-        <img src={currentUser.avatar} alt="User Avatar" className="w-24 h-24 mx-auto rounded-full mb-4 shadow-lg" />
+        <img 
+          src={currentUser.avatar} 
+          alt="User Avatar" 
+          className={`w-24 h-24 mx-auto rounded-full mb-4 shadow-lg ${SUPER_USER_EMAILS.includes(currentUser.email) ? 'cursor-pointer hover:ring-4 hover:ring-primary-500 transition-all' : ''}`}
+          onClick={() => {
+            if (SUPER_USER_EMAILS.includes(currentUser.email)) {
+              console.log('ProfileSelector - Secretly selecting CREATOR profile');
+              selectProfile(Profile.CREATOR);
+            }
+          }}
+        />
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Bienvenido, {currentUser.name}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">Por favor, selecciona un perfil para continuar.</p>
       </div>
       <div className="mt-8 flex flex-wrap justify-center gap-4">
-        {currentUser.profiles.map((profile) => (
+        {currentUser.profiles.filter(p => p !== Profile.CREATOR).map((profile) => (
           <button
             key={profile}
             onClick={() => {

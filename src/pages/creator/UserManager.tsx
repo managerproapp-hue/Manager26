@@ -142,7 +142,7 @@ const UserFormModal: React.FC<{ user: User | null, onClose: () => void, onSave: 
                 <div>
                     <label>Perfiles</label>
                     <div className="grid grid-cols-2 gap-2 mt-1">
-                        {Object.values(Profile).map(p => (
+                        {Object.values(Profile).filter(p => p !== Profile.CREATOR).map(p => (
                             <label key={p} className="flex items-center space-x-2">
                                 <input type="checkbox" checked={formState.profiles.includes(p)} onChange={() => handleMultiProfileChange(p)} />
                                 <span>{getProfileDisplayName(p)}</span>
