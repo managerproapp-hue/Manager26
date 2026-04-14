@@ -26,7 +26,7 @@ export const getProfileDisplayName = (profile: Profile, context?: 'student_simul
   return names[profile] || profile;
 };
 
-export type OrderStatus = 'Borrador' | 'Enviado' | 'Procesado' | 'Recibido Parcial' | 'Recibido OK' | 'Completado' | 'Cancelado';
+export type OrderStatus = 'Borrador' | 'Enviado' | 'Cerrado' | 'Procesado' | 'Recibido Parcial' | 'Recibido OK' | 'Completado' | 'Cancelado';
 export type UserActivityStatus = 'Activo' | 'De Baja';
 export type UserLocationStatus = 'En el centro' | 'Fuera del centro';
 export type SupplierStatus = 'Activo' | 'Inactivo';

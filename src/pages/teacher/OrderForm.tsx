@@ -1,19 +1,14 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/Card';
-import { Event, Order, OrderItem, Product, NewProductRequest } from '../../types';
+import { Event, Order, OrderItem, Product, NewProductRequest, Profile } from '../../types';
 import { BlockedAccess } from '../shared/BlockedAccess';
 import { TrashIcon, PlusIcon } from '../../components/icons';
 
 export const OrderForm: React.FC = () => {
     const { eventId, orderId } = useParams<{ eventId?: string; orderId?: string }>();
-    console.log('--- Debugging Event Finding ---');
-    console.log('Params from URL:', { eventId, orderId });
-    
     const navigate = useNavigate();
     const { events, products, orders, setOrders } = useData();
     const { currentUser } = useAuth();
@@ -22,24 +17,36 @@ export const OrderForm: React.FC = () => {
     const [notes, setNotes] = useState('');
     const [new_requests, set_new_requests] = useState<NewProductRequest[]>([]);
     const [new_request_form, set_new_request_form] = useState({ product_name: '', quantity: 1, notes: '' });
+    const [searchTerm, setSearchTerm] = useState('');
     const [isDirty, setIsDirty] = useState(false);
 
+    const existingOrder = useMemo(() => orderId ? orders.find(o => o.id === orderId) : null, [orders, orderId]);
+    const isAlmacen = currentUser?.profiles.includes(Profile.ALMACEN);
+    const isOwner = currentUser?.id === existingOrder?.user_id;
+
     const event = useMemo(() => {
-        console.log('Events array length:', events.length);
-        
-        const foundEvent = events.find(e => {
+        return events.find(e => {
             const matchesId = e.id === eventId;
             const matchesOrder = orderId && orders.find(o => o.id === orderId)?.event_id === e.id;
             return matchesId || matchesOrder;
         });
-        
-        console.log('Found event:', foundEvent);
-        console.log('-------------------------------');
-        return foundEvent;
     }, [events, eventId, orderId, orders]);
-    const existingOrder = useMemo(() => orderId ? orders.find(o => o.id === orderId) : null, [orders, orderId]);
+
+    const isEditable = useMemo(() => {
+        if (!existingOrder) return true; // New order
+        if (existingOrder.status === 'Procesado') return false;
+        if (existingOrder.status === 'Cerrado') return !!isAlmacen;
+        return !!(isOwner || isAlmacen);
+    }, [existingOrder, isAlmacen, isOwner]);
     
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
+
+    const filteredProducts = useMemo(() => {
+        return products.filter(p => 
+            p.status === 'Activo' && 
+            p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [products, searchTerm]);
 
     useEffect(() => {
         if (existingOrder) {
@@ -104,10 +111,11 @@ export const OrderForm: React.FC = () => {
         return total;
     }, [orderItems, productsMap]);
 
-    if (!event) return <Card title="Error">Evento no encontrado.</Card>;
-    if (existingOrder && existingOrder.status !== 'Borrador') return <BlockedAccess message="Este pedido ya ha sido enviado y no puede ser editado." />;
+    const isOverBudget = event ? calculateTotalCost > event.budget_per_teacher : false;
 
-    const handleSubmit = (status: 'Borrador' | 'Enviado') => {
+    if (!event) return <Card title="Error">Evento no encontrado.</Card>;
+
+    const handleSubmit = (status: 'Borrador' | 'Enviado' | 'Cerrado') => {
         if (!currentUser) return;
         
         setIsDirty(false);
@@ -149,9 +157,24 @@ export const OrderForm: React.FC = () => {
     return (
         <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Pedido para: {event.name}</h1>
+            
+            {isOverBudget && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+                    <p className="font-bold">Aviso de Presupuesto</p>
+                    <p>Has superado el tope de gasto de {event.budget_per_teacher.toLocaleString('es-ES', {style: 'currency', currency: 'EUR'})}.</p>
+                </div>
+            )}
+
             <Card title="Añadir Productos del Catálogo">
+                <input 
+                    type="text" 
+                    placeholder="Buscar producto..." 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full p-2 mb-4 border rounded dark:bg-gray-700"
+                />
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products.filter(p => p.status === 'Activo').map(product => (
+                    {filteredProducts.map(product => (
                         <div key={product.id} className="p-3 border rounded-lg dark:border-gray-600">
                             <h4 className="font-semibold">{product.name}</h4>
                             <p className="text-sm text-gray-500">{product.suppliers[0]?.price.toFixed(2) || 'N/A'}€ / {product.unit}</p>
@@ -159,6 +182,7 @@ export const OrderForm: React.FC = () => {
                                 type="number"
                                 step="0.01"
                                 min="0"
+                                disabled={!isEditable}
                                 value={orderItems.get(product.id) || ''}
                                 onChange={e => handleQuantityChange(product.id, parseFloat(e.target.value) || 0)}
                                 className="mt-2 w-full p-1 border rounded dark:bg-gray-700"
@@ -172,18 +196,18 @@ export const OrderForm: React.FC = () => {
                  <form onSubmit={handleAddRequest} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                     <div className="md:col-span-2">
                         <label className="text-sm">Nombre del Producto</label>
-                        <input type="text" value={new_request_form.product_name} onChange={e => set_new_request_form({...new_request_form, product_name: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700"/>
+                        <input type="text" disabled={!isEditable} value={new_request_form.product_name} onChange={e => set_new_request_form({...new_request_form, product_name: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700"/>
                     </div>
                     <div>
                         <label className="text-sm">Cantidad</label>
-                        <input type="number" value={new_request_form.quantity} min="1" onChange={e => set_new_request_form({...new_request_form, quantity: Number(e.target.value)})} className="w-full p-2 border rounded dark:bg-gray-700"/>
+                        <input type="number" disabled={!isEditable} value={new_request_form.quantity} min="1" onChange={e => set_new_request_form({...new_request_form, quantity: Number(e.target.value)})} className="w-full p-2 border rounded dark:bg-gray-700"/>
                     </div>
                     <div>
-                        <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded flex items-center justify-center"><PlusIcon className="w-5 h-5 mr-1"/> Añadir Solicitud</button>
+                        <button type="submit" disabled={!isEditable} className="w-full bg-blue-500 text-white p-2 rounded flex items-center justify-center"><PlusIcon className="w-5 h-5 mr-1"/> Añadir Solicitud</button>
                     </div>
                     <div className="md:col-span-4">
                         <label className="text-sm">Notas (proveedor/precio sugerido)</label>
-                        <input type="text" value={new_request_form.notes} onChange={e => set_new_request_form({...new_request_form, notes: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700"/>
+                        <input type="text" disabled={!isEditable} value={new_request_form.notes} onChange={e => set_new_request_form({...new_request_form, notes: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700"/>
                     </div>
                 </form>
                 <div className="mt-4 space-y-2">
@@ -193,7 +217,7 @@ export const OrderForm: React.FC = () => {
                                 <p><strong>{req.product_name}</strong> x {req.quantity}</p>
                                 <p className="text-xs text-gray-500">{req.notes}</p>
                             </div>
-                            <button onClick={() => handleRemoveRequest(index)} className="text-red-500"><TrashIcon className="w-5 h-5"/></button>
+                            {isEditable && <button onClick={() => handleRemoveRequest(index)} className="text-red-500"><TrashIcon className="w-5 h-5"/></button>}
                         </div>
                     ))}
                 </div>
@@ -203,6 +227,7 @@ export const OrderForm: React.FC = () => {
                     <label>Notas Adicionales para el Encargado</label>
                     <textarea 
                         value={notes}
+                        disabled={!isEditable}
                         onChange={e => { setNotes(e.target.value); setIsDirty(true); }}
                         rows={3}
                         className="w-full mt-1 p-2 border rounded dark:bg-gray-700"
@@ -211,10 +236,13 @@ export const OrderForm: React.FC = () => {
                 <div className="mt-4 text-xl font-bold">
                     Coste Total (Catálogo): {calculateTotalCost.toLocaleString('es-ES', {style: 'currency', currency: 'EUR'})}
                 </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                    <button onClick={() => handleSubmit('Borrador')} className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600">Guardar Borrador</button>
-                    <button onClick={() => handleSubmit('Enviado')} className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700">Enviar Pedido</button>
-                </div>
+                {isEditable && (
+                    <div className="mt-6 flex justify-end space-x-3">
+                        <button onClick={() => handleSubmit('Borrador')} className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600">Guardar Borrador</button>
+                        <button onClick={() => handleSubmit('Enviado')} className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700">Enviar Pedido</button>
+                        {isAlmacen && <button onClick={() => handleSubmit('Cerrado')} className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700">Cerrar Pedido</button>}
+                    </div>
+                )}
             </Card>
         </div>
     );

@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/Card';
-import { Event } from '../../types';
+import { Event, Profile } from '../../types';
 import { DownloadIcon } from '../../components/icons';
 import { exportToCsv } from '../../utils/export';
 
 export const OrderPortal: React.FC = () => {
     const { events, orders } = useData();
     const { currentUser } = useAuth();
+    const isAlmacen = currentUser?.profiles.includes(Profile.ALMACEN);
     
     const now = new Date();
     const upcomingEvents = events
@@ -63,9 +64,14 @@ export const OrderPortal: React.FC = () => {
                                             <td className="px-4 py-3">{new Date(event.end_date).toLocaleString()}</td>
                                             <td className="px-4 py-3">{myOrder ? myOrder.status : 'No realizado'}</td>
                                             <td className="px-4 py-3 no-print">
-                                                {myOrder && myOrder.status === 'Borrador' && <Link to={`/teacher/order-portal/edit/${myOrder.id}`} className="text-primary-600 hover:underline">Editar Borrador</Link>}
-                                                {!myOrder && <Link to={`/teacher/order-portal/new/${event.id}`} className="text-green-600 hover:underline">Crear Pedido</Link>}
-                                                {myOrder && myOrder.status !== 'Borrador' && <span className="text-gray-500">Enviado</span>}
+                                                {myOrder ? (
+                                                    <Link to={`/teacher/order-portal/edit/${myOrder.id}`} className="text-primary-600 hover:underline">
+                                                        {myOrder.status === 'Procesado' ? 'Ver' : 'Editar'}
+                                                    </Link>
+                                                ) : (
+                                                    <Link to={`/teacher/order-portal/new/${event.id}`} className="text-green-600 hover:underline">Crear Pedido</Link>
+                                                )}
+                                                <span className="ml-2 text-sm text-gray-500">{myOrder?.status}</span>
                                             </td>
                                         </tr>
                                     );
