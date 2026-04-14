@@ -3,6 +3,7 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/Card';
 import { Modal } from '../../components/Modal';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { Plus, Edit, Trash2, Users, Calendar, DollarSign, Settings } from 'lucide-react';
 import { DiningService, DiningServiceStatus } from '../../types';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
@@ -13,6 +14,8 @@ export const DiningServiceManager: React.FC = () => {
     const { currentUser } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingService, setEditingService] = useState<DiningService | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         service_id: '',
@@ -65,9 +68,9 @@ export const DiningServiceManager: React.FC = () => {
 
             await setDoc(doc(db, 'dining_services', serviceId), newService);
             setIsModalOpen(false);
-        } catch (error) {
-            console.error("Error saving dining service:", error);
-            alert("Error al guardar el servicio.");
+        } catch (err) {
+            console.error("Error saving dining service:", err);
+            setError("Error al guardar el servicio.");
         }
     };
 
@@ -85,13 +88,12 @@ export const DiningServiceManager: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('¿Estás seguro de que deseas eliminar este servicio?')) {
-            try {
-                await deleteDoc(doc(db, 'dining_services', id));
-            } catch (error) {
-                console.error("Error deleting dining service:", error);
-                alert("Error al eliminar el servicio.");
-            }
+        try {
+            await deleteDoc(doc(db, 'dining_services', id));
+            setConfirmDeleteId(null);
+        } catch (err) {
+            console.error("Error deleting dining service:", err);
+            setError("Error al eliminar el servicio.");
         }
     };
 
@@ -116,6 +118,13 @@ export const DiningServiceManager: React.FC = () => {
                     Nuevo Servicio
                 </button>
             </div>
+
+            {error && (
+                <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded relative">
+                    {error}
+                    <button onClick={() => setError(null)} className="absolute top-2 right-2 p-2">×</button>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {dining_services.sort((a: DiningService, b: DiningService) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((service: DiningService) => {
@@ -153,7 +162,7 @@ export const DiningServiceManager: React.FC = () => {
                                 <Edit className="w-5 h-5" />
                             </button>
                             <button
-                                onClick={() => handleDelete(service.id)}
+                                onClick={() => setConfirmDeleteId(service.id)}
                                 className="p-2 text-red-600 hover:bg-red-50 rounded-md"
                                 title="Eliminar"
                             >
@@ -254,6 +263,15 @@ export const DiningServiceManager: React.FC = () => {
                     </div>
                 </form>
             </Modal>
+
+            <ConfirmModal 
+                isOpen={!!confirmDeleteId}
+                onClose={() => setConfirmDeleteId(null)}
+                onConfirm={() => confirmDeleteId && handleDelete(confirmDeleteId)}
+                title="Eliminar Servicio"
+                message="¿Estás seguro de que deseas eliminar este servicio de comedor?"
+                type="danger"
+            />
         </div>
     );
 };

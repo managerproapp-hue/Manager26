@@ -276,6 +276,7 @@ export interface Message {
 export interface Classroom {
     id: string;
     name: string;
+    code: string; // Access code for students
     tutor_id: string; // userId
 }
 

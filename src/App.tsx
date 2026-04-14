@@ -9,6 +9,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { Login } from './pages/shared/Login';
+import { StudentClassroomRegister } from './pages/shared/StudentClassroomRegister';
 import { ProfileSelector } from './pages/shared/ProfileSelector';
 import { BlockedAccess } from './pages/shared/BlockedAccess';
 import { MyProfile } from './pages/shared/MyProfile';
@@ -104,6 +105,7 @@ const AppContent: React.FC = () => {
     <>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/student-register" element={<StudentClassroomRegister />} />
         <Route path="/catalogo" element={<TakeawayCatalog />} />
         <Route path="/select-profile" element={<ProfileSelector />} />
         <Route path="/blocked-access" element={<BlockedAccess />} />

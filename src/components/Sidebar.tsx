@@ -189,18 +189,16 @@ export const Sidebar: React.FC = () => {
             </NavLink>
         )}
       </nav>
-      {selectedProfile === Profile.CREATOR && (
-        <div className="px-4 py-4 border-t border-gray-700/50 text-center text-xs text-gray-500 flex flex-col items-center space-y-2">
-          <img src={creatorInfo.logo} alt="Logo del Creador" className="h-10 w-10 rounded-full object-cover" />
-          <p className="font-semibold text-gray-300 text-sm">{creatorInfo.app_name || 'Manager Pro'}</p>
-          <div>
-              <p>{creatorInfo.copyright}</p>
-              <a href={creatorInfo.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary-400">
-                  {creatorInfo.name}
-              </a>
-          </div>
+      <div className="px-4 py-4 border-t border-gray-700/50 text-center text-xs text-gray-500 flex flex-col items-center space-y-2">
+        <img src={creatorInfo.logo} alt="Logo del Creador" className="h-10 w-10 rounded-full object-cover" />
+        <p className="font-semibold text-gray-300 text-sm">{creatorInfo.app_name || 'Manager Pro'}</p>
+        <div>
+            <p>{creatorInfo.copyright}</p>
+            <a href={creatorInfo.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary-400">
+                {creatorInfo.name}
+            </a>
         </div>
-      )}
+      </div>
     </aside>
   );
 };

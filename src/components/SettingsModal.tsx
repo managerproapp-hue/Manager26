@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Modal } from './Modal';
+import { ConfirmModal } from './ConfirmModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { WorkspaceSettings, DEFAULT_CATEGORIES, DEFAULT_CATEGORY_CONFIGS } from '../types';
@@ -14,6 +15,8 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     
     const [activeTab, setActiveTab] = useState<'categories' | 'profile'>(isProfileIncomplete ? 'profile' : 'categories');
     const [newCategory, setNewCategory] = useState('');
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // Profile state
     const [profileForm, setProfileForm] = useState({
@@ -29,16 +32,42 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         categoryConfigs: DEFAULT_CATEGORY_CONFIGS
     };
 
+    // Ensure all categories have colors
+    React.useEffect(() => {
+        if (workspaceSettings && workspaceSettings.categories) {
+            let needsUpdate = false;
+            const updatedConfigs = [...(workspaceSettings.categoryConfigs || [])];
+            
+            workspaceSettings.categories.forEach(cat => {
+                const config = updatedConfigs.find(c => c.name === cat);
+                if (!config || !config.colors || config.colors.length < 2) {
+                    needsUpdate = true;
+                    const existingIndex = updatedConfigs.findIndex(c => c.name === cat);
+                    const newConfig = { name: cat, colors: ["#3b82f6", "#60a5fa"] };
+                    if (existingIndex >= 0) {
+                        updatedConfigs[existingIndex] = newConfig;
+                    } else {
+                        updatedConfigs.push(newConfig);
+                    }
+                }
+            });
+
+            if (needsUpdate) {
+                setWorkspaceSettings({
+                    ...workspaceSettings,
+                    categoryConfigs: updatedConfigs
+                });
+            }
+        }
+    }, [workspaceSettings, setWorkspaceSettings]);
+
     const handleSaveProfile = async () => {
         if (!profileForm.teacherName || !profileForm.instituteName) {
-            alert("Por favor, completa el nombre del profesor e instituto.");
+            setError("Por favor, completa el nombre del profesor e instituto.");
             return;
         }
         await updateCurrentUser(profileForm);
-        alert("Perfil y marca actualizados correctamente. El asistente no volverá a aparecer.");
-        if (isProfileIncomplete) {
-            onClose();
-        }
+        onClose();
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'teacherLogo' | 'instituteLogo') => {
@@ -56,9 +85,10 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     const handleAddCategory = () => {
         if (!newCategory.trim()) return;
         if (currentSettings.categories.includes(newCategory.trim())) {
-            alert("La categoría ya existe.");
+            setError("La categoría ya existe.");
             return;
         }
+        setError(null);
 
         const newSettings = {
             ...currentSettings,
@@ -70,14 +100,13 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     };
 
     const handleRemoveCategory = (category: string) => {
-        if (window.confirm(`¿Estás seguro de eliminar la categoría "${category}"?`)) {
-            const newSettings = {
-                ...currentSettings,
-                categories: currentSettings.categories.filter(c => c !== category),
-                categoryConfigs: currentSettings.categoryConfigs?.filter(c => c.name !== category) || []
-            };
-            setWorkspaceSettings(newSettings);
-        }
+        const newSettings = {
+            ...currentSettings,
+            categories: currentSettings.categories.filter(c => c !== category),
+            categoryConfigs: currentSettings.categoryConfigs?.filter(c => c.name !== category) || []
+        };
+        setWorkspaceSettings(newSettings);
+        setConfirmDelete(null);
     };
 
     const handleColorChange = (category: string, colorIndex: number, colorValue: string) => {
@@ -116,6 +145,12 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             </div>
 
             <div className="space-y-6">
+                {error && (
+                    <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded relative">
+                        {error}
+                        <button onClick={() => setError(null)} className="absolute top-0 right-0 p-2">×</button>
+                    </div>
+                )}
                 {activeTab === 'categories' ? (
                     <>
                         <div>
@@ -172,7 +207,7 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                                                     />
                                                 </div>
                                                 <button 
-                                                    onClick={() => handleRemoveCategory(category)}
+                                                    onClick={() => setConfirmDelete(category)}
                                                     className="text-red-500 hover:text-red-700 p-1"
                                                     title="Eliminar categoría"
                                                 >
@@ -259,6 +294,15 @@ export const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                     </button>
                 </div>
             </div>
+
+            <ConfirmModal 
+                isOpen={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={() => confirmDelete && handleRemoveCategory(confirmDelete)}
+                title="Eliminar Categoría"
+                message={`¿Estás seguro de eliminar la categoría "${confirmDelete}"?`}
+                type="danger"
+            />
         </Modal>
     );
 };

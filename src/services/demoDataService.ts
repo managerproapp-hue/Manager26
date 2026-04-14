@@ -153,7 +153,7 @@ export const demoData: AppData = {
         { id: 'msg-1', sender_id: 'user-1', recipient_ids: ['user-2'], subject: 'Revisión de Pedidos', body: 'Por favor, revisa los pedidos pendientes para el evento semanal.', date: new Date().toISOString(), read_by: {} }
     ],
     classrooms: [
-        { id: 'classroom-1', name: 'Prácticas de Almacén 101', tutor_id: 'teacher-1' }
+        { id: 'classroom-1', name: 'Prácticas de Almacén 101', code: 'DEMO123', tutor_id: 'teacher-1' }
     ],
     classroom_products: [
         { id: 'cprod-1', name: 'Harina de Simulación', reference: 'SIM-HAR-01', category: 'Secos', classroom_id: 'classroom-1' }

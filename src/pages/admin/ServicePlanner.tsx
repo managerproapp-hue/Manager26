@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { Card } from '../../components/Card';
 import { Modal } from '../../components/Modal';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { PlusIcon, TrashIcon, PencilIcon, UsersIcon, EventIcon } from '../../components/icons';
 import { ServiceGroup, Service, User, Profile, ServiceRole } from '../../types';
 
@@ -12,6 +13,7 @@ const ServiceGroupManager: React.FC = () => {
     const { service_groups, setServiceGroups, users, services, setServices } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState<ServiceGroup | null>(null);
+    const [confirmDeleteGroupId, setConfirmDeleteGroupId] = useState<string | null>(null);
 
     const teachers = useMemo(() => users.filter((u: User) => u.profiles.includes(Profile.TEACHER)), [users]);
     const usersMap = useMemo(() => new Map(users.map((u: User) => [u.id, u.name])), [users]);
@@ -27,10 +29,9 @@ const ServiceGroupManager: React.FC = () => {
     };
 
     const handleDelete = (groupId: string) => {
-        if (window.confirm("¿Seguro que quieres eliminar este grupo? También se eliminarán los servicios asociados.")) {
-            setServices(services.filter((s: Service) => s.service_group_id !== groupId));
-            setServiceGroups(service_groups.filter((g: ServiceGroup) => g.id !== groupId));
-        }
+        setServices(services.filter((s: Service) => s.service_group_id !== groupId));
+        setServiceGroups(service_groups.filter((g: ServiceGroup) => g.id !== groupId));
+        setConfirmDeleteGroupId(null);
     };
 
     return (
@@ -45,7 +46,7 @@ const ServiceGroupManager: React.FC = () => {
                             <h3 className="font-bold">{group.name}</h3>
                             <div className="space-x-2">
                                 <button onClick={() => { setSelectedGroup(group); setIsModalOpen(true); }}><PencilIcon className="w-4 h-4 text-gray-500"/></button>
-                                <button onClick={() => handleDelete(group.id)}><TrashIcon className="w-4 h-4 text-red-500"/></button>
+                                <button onClick={() => setConfirmDeleteGroupId(group.id)}><TrashIcon className="w-4 h-4 text-red-500"/></button>
                             </div>
                         </div>
                         <p className="text-sm font-semibold mt-2">Miembros:</p>
@@ -62,6 +63,15 @@ const ServiceGroupManager: React.FC = () => {
                 ))}
             </div>
             {isModalOpen && <ServiceGroupFormModal group={selectedGroup} teachers={teachers} onClose={() => setIsModalOpen(false)} onSave={handleSave} />}
+            
+            <ConfirmModal 
+                isOpen={!!confirmDeleteGroupId}
+                onClose={() => setConfirmDeleteGroupId(null)}
+                onConfirm={() => confirmDeleteGroupId && handleDelete(confirmDeleteGroupId)}
+                title="Eliminar Grupo"
+                message="¿Seguro que quieres eliminar este grupo? También se eliminarán los servicios asociados."
+                type="danger"
+            />
         </div>
     );
 };
@@ -155,6 +165,7 @@ const ServiceManager: React.FC = () => {
     const { services, setServices, service_groups } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedService, setSelectedService] = useState<Service | null>(null);
+    const [confirmDeleteServiceId, setConfirmDeleteServiceId] = useState<string | null>(null);
 
     const serviceGroupsMap = useMemo(() => new Map(service_groups.map((g: ServiceGroup) => [g.id, g.name])), [service_groups]);
 
@@ -169,9 +180,8 @@ const ServiceManager: React.FC = () => {
     };
 
     const handleDelete = (serviceId: string) => {
-        if (window.confirm("¿Seguro que quieres eliminar este servicio?")) {
-            setServices(services.filter((s: Service) => s.id !== serviceId));
-        }
+        setServices(services.filter((s: Service) => s.id !== serviceId));
+        setConfirmDeleteServiceId(null);
     };
 
     return (
@@ -189,13 +199,22 @@ const ServiceManager: React.FC = () => {
                             <td className="p-2">{serviceGroupsMap.get(service.service_group_id) || 'N/A'}</td>
                             <td className="p-2 space-x-2">
                                 <button onClick={() => { setSelectedService(service); setIsModalOpen(true); }}><PencilIcon className="w-4 h-4 text-gray-500"/></button>
-                                <button onClick={() => handleDelete(service.id)}><TrashIcon className="w-4 h-4 text-red-500"/></button>
+                                <button onClick={() => setConfirmDeleteServiceId(service.id)}><TrashIcon className="w-4 h-4 text-red-500"/></button>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
             {isModalOpen && <ServiceFormModal service={selectedService} serviceGroups={service_groups} onClose={() => setIsModalOpen(false)} onSave={handleSave} />}
+            
+            <ConfirmModal 
+                isOpen={!!confirmDeleteServiceId}
+                onClose={() => setConfirmDeleteServiceId(null)}
+                onConfirm={() => confirmDeleteServiceId && handleDelete(confirmDeleteServiceId)}
+                title="Eliminar Servicio"
+                message="¿Seguro que quieres eliminar este servicio?"
+                type="danger"
+            />
         </div>
     );
 };

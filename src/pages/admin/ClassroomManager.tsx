@@ -13,10 +13,20 @@ const ClassroomFormModal: React.FC<{
 }> = ({ classroom, teachers, onClose, onSave }) => {
     const [name, setName] = useState(classroom?.name || '');
     const [tutor_id, setTutorId] = useState(classroom?.tutor_id || '');
+    const [code, setCode] = useState(classroom?.code || '');
+
+    const generateCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 6; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        setCode(result);
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, tutor_id });
+        onSave({ name, tutor_id, code: code.toUpperCase() });
     };
 
     return (
@@ -32,6 +42,27 @@ const ClassroomFormModal: React.FC<{
                         className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700"
                         required
                     />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium">Código de Acceso para Alumnos</label>
+                    <div className="flex space-x-2 mt-1">
+                        <input
+                            type="text"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.toUpperCase())}
+                            placeholder="Ej: AULA123"
+                            className="flex-1 p-2 border rounded-md dark:bg-gray-700 font-mono"
+                            required
+                        />
+                        <button 
+                            type="button" 
+                            onClick={generateCode}
+                            className="bg-gray-100 dark:bg-gray-600 px-3 py-2 rounded-md text-xs hover:bg-gray-200"
+                        >
+                            Generar
+                        </button>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">Este código será necesario para que los alumnos se registren en esta aula.</p>
                 </div>
                 <div>
                     <label className="block text-sm font-medium">Asignar Profesor Tutor</label>
@@ -50,7 +81,7 @@ const ClassroomFormModal: React.FC<{
                     </select>
                 </div>
                 <div className="flex justify-end pt-4 space-x-2">
-                    <button type="button" onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-md">Cancelar</button>
+                    <button type="button" onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-md text-gray-800">Cancelar</button>
                     <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-md">Guardar</button>
                 </div>
             </form>
@@ -88,6 +119,7 @@ export const ClassroomManager: React.FC = () => {
             const newClassroom: Classroom = {
                 id: `cls-${Date.now()}`,
                 name: classroomData.name!,
+                code: classroomData.code!,
                 tutor_id: classroomData.tutor_id!,
             };
             setClassrooms([...classrooms, newClassroom]);
@@ -127,6 +159,7 @@ export const ClassroomManager: React.FC = () => {
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                                 <th className="px-4 py-3 text-left">Nombre del Aula</th>
+                                <th className="px-4 py-3 text-left">Código Acceso</th>
                                 <th className="px-4 py-3 text-left">Profesor Tutor</th>
                                 <th className="px-4 py-3 text-center">Nº Alumnos</th>
                                 <th className="px-4 py-3 text-left">Acciones</th>
@@ -136,6 +169,7 @@ export const ClassroomManager: React.FC = () => {
                             {classrooms.map(classroom => (
                                 <tr key={classroom.id} className="border-b dark:border-gray-700">
                                     <td className="px-4 py-2 font-medium">{classroom.name}</td>
+                                    <td className="px-4 py-2 font-mono text-primary-600 font-bold">{classroom.code || '---'}</td>
                                     <td className="px-4 py-2">{usersMap.get(classroom.tutor_id)?.name || 'Sin Asignar'}</td>
                                     <td className="px-4 py-2 text-center">{studentCountByClassroom.get(classroom.id) || 0}</td>
                                     <td className="px-4 py-2 space-x-2">
