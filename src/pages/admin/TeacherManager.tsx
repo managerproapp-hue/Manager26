@@ -14,8 +14,15 @@ export const TeacherManager: React.FC = () => {
     const [deleteStep, setDeleteStep] = useState(1);
 
     const staff = useMemo(() => users.filter(u => 
-        !u.profiles.includes(Profile.CREATOR) && 
-        !u.profiles.includes(Profile.STUDENT)
+        u.profiles.includes(Profile.TEACHER)
+    ), [users]);
+
+    const takeawayCustomers = useMemo(() => users.filter(u => 
+        u.profiles.includes(Profile.CUSTOMER)
+    ), [users]);
+
+    const students = useMemo(() => users.filter(u => 
+        u.profiles.includes(Profile.STUDENT)
     ), [users]);
 
     const handleOpenFormModal = (user: User | null = null) => {
@@ -93,16 +100,13 @@ export const TeacherManager: React.FC = () => {
                 </div>
             </div>
             
-            <Card title="Listado de Personal">
+            <Card title="Profesores">
                  <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                            <tr>
                                 <th className="px-6 py-3">Nombre</th>
                                 <th className="px-6 py-3">Email</th>
-                                <th className="px-6 py-3">Perfiles</th>
-                                <th className="px-6 py-3 text-center">Estado Actividad</th>
-                                <th className="px-6 py-3 text-center">Ubicación</th>
                                 <th className="px-6 py-3">Acciones</th>
                             </tr>
                         </thead>
@@ -111,24 +115,60 @@ export const TeacherManager: React.FC = () => {
                                 <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{user.name}</td>
                                     <td className="px-6 py-4">{user.email}</td>
-                                    <td className="px-6 py-4">{user.profiles.map(p => getProfileDisplayName(p)).join(', ')}</td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.activity_status === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                            {user.activity_status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                       {user.location_status === 'Fuera del centro' && (
-                                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-800">
-                                            {user.location_status}
-                                        </span>
-                                       )}
-                                    </td>
                                     <td className="px-6 py-4 text-sm font-medium space-x-4 no-print">
                                         <button onClick={() => handleOpenFormModal(user)} className="text-blue-600 dark:text-blue-500 hover:underline">Ver/Editar</button>
-                                        <button onClick={() => handleToggleStatus(user)} className={user.activity_status === 'Activo' ? 'text-orange-600 hover:underline' : 'text-green-600 hover:underline'}>
-                                            {user.activity_status === 'Activo' ? 'Dar de Baja' : 'Reactivar'}
-                                        </button>
+                                        <button onClick={() => handleOpenDeleteModal(user)} className="text-red-600 dark:text-red-500 hover:underline">Eliminar</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+
+            <Card title="Clientes Takeaway" className="mt-6">
+                 <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                           <tr>
+                                <th className="px-6 py-3">Nombre</th>
+                                <th className="px-6 py-3">Email</th>
+                                <th className="px-6 py-3">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {takeawayCustomers.map(user => (
+                                <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{user.name}</td>
+                                    <td className="px-6 py-4">{user.email}</td>
+                                    <td className="px-6 py-4 text-sm font-medium space-x-4 no-print">
+                                        <button onClick={() => handleOpenFormModal(user)} className="text-blue-600 dark:text-blue-500 hover:underline">Ver/Editar</button>
+                                        <button onClick={() => handleOpenDeleteModal(user)} className="text-red-600 dark:text-red-500 hover:underline">Eliminar</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+
+            <Card title="Alumnos" className="mt-6">
+                 <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                           <tr>
+                                <th className="px-6 py-3">Nombre</th>
+                                <th className="px-6 py-3">Email</th>
+                                <th className="px-6 py-3">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {students.map(user => (
+                                <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{user.name}</td>
+                                    <td className="px-6 py-4">{user.email}</td>
+                                    <td className="px-6 py-4 text-sm font-medium space-x-4 no-print">
+                                        <button onClick={() => handleOpenFormModal(user)} className="text-blue-600 dark:text-blue-500 hover:underline">Ver/Editar</button>
                                         <button onClick={() => handleOpenDeleteModal(user)} className="text-red-600 dark:text-red-500 hover:underline">Eliminar</button>
                                     </td>
                                 </tr>
