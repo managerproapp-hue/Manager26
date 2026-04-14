@@ -77,6 +77,10 @@ const RedirectHandler: React.FC = () => {
   return <Navigate to={`/${selectedProfile}/dashboard`} replace />;
 };
 
+import { DiningServiceManager } from './pages/admin/DiningServiceManager';
+import { DiningReservations } from './pages/almacen/DiningReservations';
+import { DiningServiceView } from './pages/teacher/DiningServiceView';
+
 const AppContent: React.FC = () => {
   const { isAuthReady, currentUser, selectedProfile } = useAuth();
   const [showMandatorySettings, setShowMandatorySettings] = React.useState(false);
@@ -126,6 +130,8 @@ const AppContent: React.FC = () => {
             <Route path="company" element={<CompanyData />} />
             <Route path="support" element={<Support />} />
             <Route path="classrooms" element={<ClassroomManager />} />
+            <Route path="dining-services" element={<DiningServiceManager />} />
+            <Route path="dining-view" element={<DiningServiceView />} />
             <Route path="messaging" element={<Messaging />} />
             <Route path="profile" element={<MyProfile />} />
             <Route index element={<Navigate to="dashboard" replace />} />
@@ -139,6 +145,8 @@ const AppContent: React.FC = () => {
               <Route path="warehouse-order/:eventId?" element={<WarehouseOrder />} />
               <Route path="economato" element={<EconomatoManager />} />
               <Route path="mini-economato" element={<MiniEconomato />} />
+              <Route path="dining-reservations" element={<DiningReservations />} />
+              <Route path="dining-view" element={<DiningServiceView />} />
               <Route path="order-history" element={<OrderHistory />} />
               <Route path="products" element={<ProductManager />} />
               <Route path="suppliers" element={<SupplierManager />} />
@@ -160,6 +168,7 @@ const AppContent: React.FC = () => {
               <Route path="takeaway-sales" element={<TakeawaySales />} />
               <Route path="takeaway-catalog" element={<TakeawayCatalog />} />
               <Route path="reservations" element={<ReservationManager />} />
+              <Route path="dining-view" element={<DiningServiceView />} />
               <Route path="notifications" element={<NotificationManager />} />
               <Route path="recipes" element={<RecipeManager />} />
               <Route path="recipes/new" element={<RecipeForm />} />

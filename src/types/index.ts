@@ -364,6 +364,38 @@ export interface Reservation {
     created_at: string; // ISO string
 }
 
+export type DiningServiceStatus = 'borrador' | 'abierto' | 'cerrado';
+
+export interface DinerAllergen {
+  diner_name?: string;
+  allergens: string[];
+}
+
+export interface DiningService {
+  id: string;
+  date: string;
+  max_capacity: number;
+  current_pax: number;
+  menu_price: number;
+  status: DiningServiceStatus;
+  created_by: string;
+  created_at: string;
+}
+
+export interface DiningReservation {
+  id: string;
+  service_id: string;
+  reference_name: string;
+  client_entity: string;
+  pax: number;
+  phone_1: string;
+  phone_2?: string;
+  total_price: number;
+  diners_allergens: DinerAllergen[];
+  created_by: string;
+  created_at: string;
+}
+
 export interface AppData {
     users: User[];
     products: Product[];
@@ -388,4 +420,6 @@ export interface AppData {
     classroom_orders: ClassroomOrder[];
     service_groups: ServiceGroup[];
     services: Service[];
+    dining_services: DiningService[];
+    dining_reservations: DiningReservation[];
 }

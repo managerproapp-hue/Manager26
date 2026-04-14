@@ -174,4 +174,6 @@ export const initialData: AppData = {
   classroom_orders: classroomOrders,
   service_groups: serviceGroups,
   services,
+  dining_services: [],
+  dining_reservations: []
 };

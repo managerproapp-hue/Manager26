@@ -64,6 +64,8 @@ export const Support: React.FC = () => {
             services: data.services,
             sale_items: data.sale_items,
             reservations: data.reservations,
+            dining_services: data.dining_services,
+            dining_reservations: data.dining_reservations,
         };
         const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(backupData, null, 2))}`;
         const link = document.createElement("a");

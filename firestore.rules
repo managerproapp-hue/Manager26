@@ -217,5 +217,20 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (isTeacher() || isSalesManager() || isOwner(resource.data.user_id));
       allow delete: if isAdmin() || isTeacher() || isSalesManager();
     }
+
+    match /dining_services/{serviceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /dining_reservations/{reservationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAlmacen() && 
+                      get(/databases/$(database)/documents/dining_services/$(request.resource.data.service_id)).data.status == 'abierto';
+      allow update: if (isAlmacen() && 
+                       get(/databases/$(database)/documents/dining_services/$(resource.data.service_id)).data.status == 'abierto') || 
+                      isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

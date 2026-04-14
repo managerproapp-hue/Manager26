@@ -169,4 +169,6 @@ export const demoData: AppData = {
     ],
     service_groups: demoServiceGroups,
     services: demoServices,
+    dining_services: [],
+    dining_reservations: []
 };
