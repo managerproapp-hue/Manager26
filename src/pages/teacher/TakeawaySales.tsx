@@ -121,7 +121,7 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
 };
 
 export const TakeawaySales: React.FC = () => {
-    const { sale_items, setSaleItems } = useData();
+    const { sale_items, setSaleItems, reservations } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<SaleItem | null>(null);
 
@@ -197,6 +197,9 @@ export const TakeawaySales: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activeItems.map(item => {
                     const isExpired = new Date(`${item.sale_date}T${item.end_time}`) < new Date();
+                    const itemReservations = reservations.filter(r => r.sale_item_id === item.id);
+                    const totalReserved = itemReservations.reduce((sum, r) => sum + r.quantity, 0);
+                    
                     return (
                         <Card key={item.id} title={item.name} className={getStatusColor(item)}>
                             <div className="flex justify-between items-start mb-2">
@@ -209,7 +212,8 @@ export const TakeawaySales: React.FC = () => {
                             </div>
                             <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
                             <p className="text-sm">Vendido por: {item.teacher_name || 'Profesor'}</p>
-                            <p className="text-sm">Raciones: {item.rations}</p>
+                            <p className="text-sm">Raciones disponibles: {item.rations}</p>
+                            <p className="text-sm font-medium text-primary-600">Reservas realizadas: {totalReserved}</p>
                             <p className="text-sm">Fecha: {item.sale_date}</p>
                             <p className="text-sm">Recogida: {item.pickup_time} - {item.end_time}</p>
                             <p className="text-sm">Alérgenos: {item.allergens.join(', ')}</p>
