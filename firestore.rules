@@ -199,7 +199,7 @@ service cloud.firestore {
     }
 
     match /sale_items/{saleItemId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isTeacher() && validString('name', 1, 100) && validString('description', 0, 500);
     }
 

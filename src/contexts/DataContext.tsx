@@ -94,9 +94,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { currentUser } = useAuth();
 
     useEffect(() => {
+        // Public collections (accessible without login)
+        const publicCollections: { name: string, setter: (data: any) => void }[] = [
+            { name: 'sale_items', setter: setSaleItemsState },
+        ];
+
+        const publicUnsubscribes = publicCollections.map(col => {
+            return onSnapshot(collection(db, col.name), (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                col.setter(data);
+            }, (error) => {
+                console.error(`Error listening to public ${col.name}:`, error);
+            });
+        });
+
         if (!currentUser) {
-            console.log('DataProvider - No user, skipping listeners');
-            return;
+            console.log('DataProvider - No user, skipping private listeners');
+            return () => {
+                publicUnsubscribes.forEach(unsub => unsub());
+            };
         }
 
         const collections: { name: string, setter: (data: any) => void }[] = [
@@ -112,7 +128,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             { name: 'assignments', setter: setAssignmentsState },
             { name: 'recipes', setter: setRecipesState },
             { name: 'sales', setter: setSalesState },
-            { name: 'sale_items', setter: setSaleItemsState },
+            // sale_items is now public
             { name: 'reservations', setter: setReservationsState },
             { name: 'mini_economato_stock', setter: setMiniEconomatoStockState },
             { name: 'messages', setter: setMessagesState },
@@ -148,6 +164,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         return () => {
+            publicUnsubscribes.forEach(unsub => unsub());
             unsubscribes.forEach(unsub => unsub());
             if (unsubWorkspaceSettings) unsubWorkspaceSettings();
         };

@@ -9,6 +9,7 @@ import { AllergenSelector } from './RecipeForm'; // Importar desde RecipeForm
 
 const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Partial<SaleItem>) => void; onClose: () => void; }> = ({ saleItem, onSave, onClose }) => {
     const { recipes } = useData();
+    const { currentUser } = useAuth();
     const [formState, setFormState] = useState({
         recipe_id: saleItem?.recipe_id || '',
         name: saleItem?.name || '',
@@ -21,6 +22,8 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
         sale_date: saleItem?.sale_date || new Date().toISOString().split('T')[0],
         pickup_time: saleItem?.pickup_time || '14:00',
         end_time: saleItem?.end_time || '15:00',
+        teacher_name: saleItem?.teacher_name || currentUser?.teacherName || currentUser?.name || '',
+        group_name: saleItem?.group_name || '',
     });
 
     const handleRecipeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -46,20 +49,26 @@ const SaleItemFormModal: React.FC<{ saleItem: SaleItem | null; onSave: (item: Pa
         e.preventDefault();
         onSave({
             ...formState,
-            workspace_id: 'workspace-1', // Placeholder
-            created_at: new Date().toISOString()
+            workspace_id: currentUser?.workspaceId || 'workspace-1',
+            created_at: saleItem?.created_at || new Date().toISOString()
         });
     };
 
     return (
         <Modal isOpen={true} onClose={onClose} title={saleItem ? 'Editar Plato' : 'Nuevo Plato'}>
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Seleccionar Receta (Opcional)</label>
-                    <select name="recipe_id" value={formState.recipe_id} onChange={handleRecipeChange} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
-                        <option value="">Selecciona una receta...</option>
-                        {recipes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profesor/Grupo</label>
+                        <input type="text" name="teacher_name" value={formState.teacher_name} onChange={handleChange} required className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Seleccionar Receta (Opcional)</label>
+                        <select name="recipe_id" value={formState.recipe_id} onChange={handleRecipeChange} className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                            <option value="">Selecciona una receta...</option>
+                            {recipes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Alérgenos</label>
@@ -154,6 +163,7 @@ export const TakeawaySales: React.FC = () => {
                     <Card key={item.id} title={item.name}>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
                         <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
+                        <p className="text-sm">Vendido por: {item.teacher_name || 'Profesor'}</p>
                         <p className="text-sm">Raciones: {item.rations}</p>
                         <p className="text-sm text-yellow-600">Estado: En Preparación</p>
                         <div className="mt-4 flex justify-end space-x-2">
@@ -171,6 +181,7 @@ export const TakeawaySales: React.FC = () => {
                     <Card key={item.id} title={item.name}>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
                         <p className="font-bold text-lg">{item.price.toFixed(2)} €</p>
+                        <p className="text-sm">Vendido por: {item.teacher_name || 'Profesor'}</p>
                         <p className="text-sm">Raciones: {item.rations}</p>
                         <p className="text-sm">Fecha: {item.sale_date}</p>
                         <p className="text-sm">Recogida: {item.pickup_time} - {item.end_time}</p>

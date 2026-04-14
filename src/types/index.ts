@@ -341,6 +341,8 @@ export interface SaleItem {
     sale_date: string; // ISO string
     pickup_time: string;
     end_time: string;
+    teacher_name?: string;
+    group_name?: string;
 }
 
 export interface Reservation {
