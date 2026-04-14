@@ -2,129 +2,126 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { Card } from '../../components/Card';
-import { Event, Order, OrderItem, Product } from '../../types';
+import { Order, Product, StockItem, Message } from '../../types';
 
-// Component to select an event
-const EventSelector: React.FC = () => {
-    const { events } = useData();
+// Component to select an order
+const OrderSelector: React.FC = () => {
+    const { orders, users } = useData();
     const now = new Date();
-    const activeEvents = events.filter(e => e.type === 'Regular' && new Date(e.start_date) <= now && new Date(e.end_date) >= now);
+    
+    // Show all orders that are not 'Procesado' (active or future)
+    const activeOrders = orders.filter(o => o.status !== 'Procesado');
 
     return (
         <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Pedido de Reposición de Stock</h1>
-            <Card title="Selecciona un Evento Semanal Activo">
-                {activeEvents.length > 0 ? (
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Asignación de Stock a Pedidos</h1>
+            <Card title="Selecciona un Pedido Activo">
+                {activeOrders.length > 0 ? (
                     <div className="space-y-3">
-                        {activeEvents.map(event => (
-                            <Link key={event.id} to={`/almacen/warehouse-order/${event.id}`} className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <p className="font-bold">{event.name}</p>
-                                <p className="text-sm text-gray-500">Válido hasta: {new Date(event.end_date).toLocaleString()}</p>
-                            </Link>
-                        ))}
+                        {activeOrders.map(order => {
+                            const user = users.find(u => u.id === order.user_id);
+                            return (
+                                <Link key={order.id} to={`/almacen/warehouse-order/${order.id}`} className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <p className="font-bold">Pedido {order.id} - {user?.name || 'Desconocido'}</p>
+                                    <p className="text-sm text-gray-500">Estado: {order.status} | Fecha: {new Date(order.date).toLocaleDateString()}</p>
+                                </Link>
+                            );
+                        })}
                     </div>
-                ) : <p>No hay eventos de pedido 'Regular' activos en este momento para realizar un pedido de reposición.</p>}
+                ) : <p>No hay pedidos activos en este momento.</p>}
             </Card>
         </div>
     );
 };
 
-// Component for the order form itself
-const ReplenishmentForm: React.FC<{ event: Event }> = ({ event }) => {
+// Component for the assignment form
+const AssignmentForm: React.FC<{ order: Order }> = ({ order }) => {
     const navigate = useNavigate();
-    const { products, setOrders } = useData();
-    const [orderItems, setOrderItems] = useState<Map<string, number>>(new Map());
+    const { products, mini_economato_stock, setOrders, setMiniEconomatoStock, setMessages, users } = useData();
+    const [selectedProductId, setSelectedProductId] = useState('');
+    const [quantity, setQuantity] = useState(1);
     
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
+    const stockMap = useMemo(() => new Map(mini_economato_stock.map(s => [s.id, s])), [mini_economato_stock]);
 
-    const handleQuantityChange = (productId: string, quantity: number) => {
-        const newItems = new Map(orderItems);
-        if (quantity > 0) newItems.set(productId, quantity);
-        else newItems.delete(productId);
-        setOrderItems(newItems);
-    };
-
-    const totalCost = useMemo(() => {
-        let total = 0;
-        orderItems.forEach((quantity, productId) => {
-            const product = productsMap.get(productId);
-            if (product && product.suppliers.length > 0) {
-                const price = product.suppliers.sort((a,b) => a.price - b.price)[0].price; // cheapest
-                total += price * quantity * (1 + product.tax / 100);
-            }
-        });
-        return total;
-    }, [orderItems, productsMap]);
-
-    const handleSubmit = () => {
-        if (orderItems.size === 0) {
-            alert("El pedido está vacío.");
+    const handleAssign = () => {
+        const product = productsMap.get(selectedProductId);
+        const stockItem = stockMap.get(selectedProductId);
+        
+        if (!product || !stockItem || stockItem.stock < quantity) {
+            alert("Producto no encontrado o stock insuficiente.");
             return;
         }
 
-        const newOrderItems: OrderItem[] = Array.from(orderItems.entries()).map(([productId, quantity]) => {
-            const product = productsMap.get(productId)!;
-            const price = product.suppliers.sort((a,b) => a.price - b.price)[0]?.price || 0;
-            return { product_id: productId, quantity, price, tax: product.tax };
-        });
-
-        const orderToSave: Order = {
-            id: `ord-wh-${Date.now()}`,
-            user_id: '0', // Special ID for warehouse stock orders
-            date: new Date().toISOString(),
-            status: 'Enviado',
-            event_id: event.id,
-            items: newOrderItems,
-            cost: totalCost,
-            notes: 'Pedido de reposición para Mini-Economato.',
+        // 1. Update order
+        const updatedOrder = {
+            ...order,
+            items: [...order.items, { product_id: selectedProductId, quantity, price: 0, tax: product.tax }], // Assigned as extra
+            cost: (order.cost || 0) // Should ideally update cost
         };
-        
-        setOrders(prev => [...prev, orderToSave]);
-        alert('Pedido de reposición enviado para su procesamiento.');
-        navigate('/almacen/dashboard');
+        setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
+
+        // 2. Update stock
+        setMiniEconomatoStock(prev => prev.map(s => s.id === selectedProductId ? { ...s, stock: s.stock - quantity } : s));
+
+        // 3. Send message
+        const newMessage: Message = {
+            id: `msg-${Date.now()}`,
+            sender_id: '0', // Warehouse ID
+            recipient_ids: [order.user_id],
+            subject: 'Asignación de Stock Extra',
+            body: `Se le han asignado ${quantity} ${product.unit} de ${product.name} a su pedido de la semana.`,
+            date: new Date().toISOString(),
+            read_by: {}
+        };
+        setMessages(prev => [...prev, newMessage]);
+
+        alert('Stock asignado y mensaje enviado.');
+        navigate('/almacen/warehouse-order');
     };
 
     return (
         <div>
-            <Link to="/almacen/warehouse-order" className="text-sm text-primary-600 hover:underline mb-4 block">&larr; Cambiar evento</Link>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Pedido de Reposición para: {event.name}</h1>
-            <Card title="Seleccionar Productos del Catálogo">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products.filter(p => p.status === 'Activo').map(product => (
-                        <div key={product.id} className="p-3 border rounded-lg dark:border-gray-600">
-                            <h4 className="font-semibold">{product.name}</h4>
-                            <p className="text-sm text-gray-500">{product.suppliers.sort((a,b) => a.price - b.price)[0]?.price.toFixed(2) || 'N/A'}€ / {product.unit}</p>
-                            <input
-                                type="number" step="0.01" min="0"
-                                value={orderItems.get(product.id) || ''}
-                                onChange={e => handleQuantityChange(product.id, parseFloat(e.target.value) || 0)}
-                                className="mt-2 w-full p-1 border rounded dark:bg-gray-700"
-                                placeholder="Cantidad"
-                            />
-                        </div>
-                    ))}
-                </div>
-            </Card>
-            <Card title="Resumen" className="mt-6">
-                <div className="mt-4 text-xl font-bold">
-                    Coste Total (Aprox): {totalCost.toLocaleString('es-ES', {style: 'currency', currency: 'EUR'})}
-                </div>
-                <div className="mt-6 flex justify-end">
-                    <button onClick={handleSubmit} className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700">Enviar Pedido de Reposición</button>
+            <Link to="/almacen/warehouse-order" className="text-sm text-primary-600 hover:underline mb-4 block">&larr; Cambiar pedido</Link>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6">Asignar Stock al Pedido: {order.id}</h1>
+            <Card title="Buscar y Asignar Producto del Stock">
+                <div className="space-y-4">
+                    <select 
+                        className="w-full p-2 border rounded dark:bg-gray-700"
+                        value={selectedProductId}
+                        onChange={e => setSelectedProductId(e.target.value)}
+                    >
+                        <option value="">Selecciona un producto del stock...</option>
+                        {mini_economato_stock.map(s => {
+                            const product = productsMap.get(s.id);
+                            return product ? (
+                                <option key={s.id} value={s.id}>{product.name} (Stock: {s.stock})</option>
+                            ) : null;
+                        })}
+                    </select>
+                    <input
+                        type="number"
+                        min="1"
+                        value={quantity}
+                        onChange={e => setQuantity(Number(e.target.value))}
+                        className="w-full p-2 border rounded dark:bg-gray-700"
+                        placeholder="Cantidad"
+                    />
+                    <button onClick={handleAssign} className="w-full bg-primary-600 text-white p-2 rounded hover:bg-primary-700">Asignar al Pedido</button>
                 </div>
             </Card>
         </div>
     );
 };
 
-// Main component to switch between views
+// Main component
 export const WarehouseOrder: React.FC = () => {
-    const { eventId } = useParams<{ eventId?: string }>();
-    const { events } = useData();
-    const event = useMemo(() => events.find(e => e.id === eventId), [events, eventId]);
+    const { orderId } = useParams<{ orderId?: string }>();
+    const { orders } = useData();
+    const order = useMemo(() => orders.find(o => o.id === orderId), [orders, orderId]);
 
-    if (eventId && event) {
-        return <ReplenishmentForm event={event} />;
+    if (orderId && order) {
+        return <AssignmentForm order={order} />;
     }
-    return <EventSelector />;
+    return <OrderSelector />;
 };
