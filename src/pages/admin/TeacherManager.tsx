@@ -8,6 +8,7 @@ import { exportToCsv } from '../../utils/export';
 
 export const TeacherManager: React.FC = () => {
     const { users, setUsers, assignments, groups, modules } = useData();
+    const [activeTab, setActiveTab] = useState<'profesores' | 'clientes' | 'alumnos'>('profesores');
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -24,6 +25,32 @@ export const TeacherManager: React.FC = () => {
     const students = useMemo(() => users.filter(u => 
         u.profiles.includes(Profile.STUDENT)
     ), [users]);
+
+    const renderTable = (usersList: User[]) => (
+        <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <tr>
+                        <th className="px-6 py-3">Nombre</th>
+                        <th className="px-6 py-3">Email</th>
+                        <th className="px-6 py-3">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {usersList.map(user => (
+                        <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{user.name}</td>
+                            <td className="px-6 py-4">{user.email}</td>
+                            <td className="px-6 py-4 text-sm font-medium space-x-4 no-print">
+                                <button onClick={() => handleOpenFormModal(user)} className="text-blue-600 dark:text-blue-500 hover:underline">Ver/Editar</button>
+                                <button onClick={() => handleOpenDeleteModal(user)} className="text-red-600 dark:text-red-500 hover:underline">Eliminar</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
 
     const handleOpenFormModal = (user: User | null = null) => {
         setSelectedUser(user);
@@ -100,82 +127,16 @@ export const TeacherManager: React.FC = () => {
                 </div>
             </div>
             
-            <Card title="Profesores">
-                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                           <tr>
-                                <th className="px-6 py-3">Nombre</th>
-                                <th className="px-6 py-3">Email</th>
-                                <th className="px-6 py-3">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {staff.map(user => (
-                                <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{user.name}</td>
-                                    <td className="px-6 py-4">{user.email}</td>
-                                    <td className="px-6 py-4 text-sm font-medium space-x-4 no-print">
-                                        <button onClick={() => handleOpenFormModal(user)} className="text-blue-600 dark:text-blue-500 hover:underline">Ver/Editar</button>
-                                        <button onClick={() => handleOpenDeleteModal(user)} className="text-red-600 dark:text-red-500 hover:underline">Eliminar</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
+            <div className="flex space-x-2 mb-6">
+                <button onClick={() => setActiveTab('profesores')} className={`px-4 py-2 rounded-md ${activeTab === 'profesores' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Profesores</button>
+                <button onClick={() => setActiveTab('clientes')} className={`px-4 py-2 rounded-md ${activeTab === 'clientes' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Clientes Takeaway</button>
+                <button onClick={() => setActiveTab('alumnos')} className={`px-4 py-2 rounded-md ${activeTab === 'alumnos' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Alumnos</button>
+            </div>
 
-            <Card title="Clientes Takeaway" className="mt-6">
-                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                           <tr>
-                                <th className="px-6 py-3">Nombre</th>
-                                <th className="px-6 py-3">Email</th>
-                                <th className="px-6 py-3">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {takeawayCustomers.map(user => (
-                                <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{user.name}</td>
-                                    <td className="px-6 py-4">{user.email}</td>
-                                    <td className="px-6 py-4 text-sm font-medium space-x-4 no-print">
-                                        <button onClick={() => handleOpenFormModal(user)} className="text-blue-600 dark:text-blue-500 hover:underline">Ver/Editar</button>
-                                        <button onClick={() => handleOpenDeleteModal(user)} className="text-red-600 dark:text-red-500 hover:underline">Eliminar</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
-
-            <Card title="Alumnos" className="mt-6">
-                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                           <tr>
-                                <th className="px-6 py-3">Nombre</th>
-                                <th className="px-6 py-3">Email</th>
-                                <th className="px-6 py-3">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {students.map(user => (
-                                <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{user.name}</td>
-                                    <td className="px-6 py-4">{user.email}</td>
-                                    <td className="px-6 py-4 text-sm font-medium space-x-4 no-print">
-                                        <button onClick={() => handleOpenFormModal(user)} className="text-blue-600 dark:text-blue-500 hover:underline">Ver/Editar</button>
-                                        <button onClick={() => handleOpenDeleteModal(user)} className="text-red-600 dark:text-red-500 hover:underline">Eliminar</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            <Card title={activeTab === 'profesores' ? 'Profesores' : activeTab === 'clientes' ? 'Clientes Takeaway' : 'Alumnos'}>
+                {activeTab === 'profesores' && renderTable(staff)}
+                {activeTab === 'clientes' && renderTable(takeawayCustomers)}
+                {activeTab === 'alumnos' && renderTable(students)}
             </Card>
 
             {isFormModalOpen && (
