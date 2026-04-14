@@ -40,6 +40,25 @@ export const TeacherManager: React.FC = () => {
                 alert(`Error: ${error.message}`);
                 return;
             }
+        } else { // Creating new
+            try {
+                const newUser: User = {
+                    id: `user-${Date.now()}`,
+                    name: userData.name || '',
+                    email: userData.email || '',
+                    profiles: userData.profiles || [Profile.TEACHER],
+                    activity_status: 'Activo',
+                    location_status: 'En el centro',
+                    avatar: `https://i.pravatar.cc/150?u=${Date.now()}`,
+                    ...userData
+                };
+                setUsers([...users, newUser]);
+                console.log('New user created locally and syncing to DB...');
+            } catch (error: any) {
+                console.error('Error creating user:', error);
+                alert(`Error: ${error.message}`);
+                return;
+            }
         }
         setIsFormModalOpen(false);
         setSelectedUser(null);
@@ -211,7 +230,7 @@ const UserFormModal: React.FC<{
         onSave({ ...formState });
     };
 
-    const assignableProfiles = [Profile.ADMIN, Profile.ALMACEN, Profile.TEACHER, Profile.STUDENT];
+    const assignableProfiles = [Profile.ADMIN, Profile.ALMACEN, Profile.TEACHER, Profile.STUDENT, Profile.SALES_MANAGER];
 
     return (
         <Modal isOpen={true} onClose={onClose} title={user ? 'Editar Personal' : 'Nuevo Personal'}>

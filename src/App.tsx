@@ -80,6 +80,7 @@ const RedirectHandler: React.FC = () => {
 import { DiningServiceManager } from './pages/admin/DiningServiceManager';
 import { DiningReservations } from './pages/almacen/DiningReservations';
 import { DiningServiceView } from './pages/teacher/DiningServiceView';
+import { SalesDashboard } from './pages/sales/SalesDashboard';
 
 const AppContent: React.FC = () => {
   const { isAuthReady, currentUser, selectedProfile } = useAuth();
@@ -174,6 +175,18 @@ const AppContent: React.FC = () => {
               <Route path="recipes/new" element={<RecipeForm />} />
               <Route path="recipes/edit/:recipeId" element={<RecipeForm />} />
               <Route path="aula" element={<ClassroomList />} />
+              <Route path="messaging" element={<Messaging />} />
+              <Route path="profile" element={<MyProfile />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute allowedProfiles={[Profile.SALES_MANAGER]} />}>
+          <Route path="/sales_manager" element={<TeacherLayout />}>
+              <Route path="dashboard" element={<SalesDashboard />} />
+              <Route path="takeaway-catalog" element={<TakeawayCatalog />} />
+              <Route path="reservations" element={<ReservationManager />} />
+              <Route path="sales-history" element={<TakeawaySales />} />
               <Route path="messaging" element={<Messaging />} />
               <Route path="profile" element={<MyProfile />} />
               <Route index element={<Navigate to="dashboard" replace />} />

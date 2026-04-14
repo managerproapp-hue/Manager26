@@ -35,6 +35,16 @@ export const AllergenSelector: React.FC<{ selected: string[], onChange: (allerge
 
 const LabelPreviewModal: React.FC<{ recipe: Recipe, company: any, onClose: () => void }> = ({ recipe, company, onClose }) => {
     const { products } = useData();
+    const { currentUser } = useAuth();
+    
+    // Use teacher profile if available, otherwise fallback to global company info
+    const displayInfo = {
+        name: currentUser?.instituteName || company.name,
+        logo: currentUser?.instituteLogo || company.print_logo,
+        teacher: currentUser?.teacherName || '',
+        teacherLogo: currentUser?.teacherLogo || ''
+    };
+
     const productsMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
     const allAllergens = useMemo(() => {
         const allergens = new Set<string>();
@@ -76,9 +86,17 @@ const LabelPreviewModal: React.FC<{ recipe: Recipe, company: any, onClose: () =>
     return (
         <Modal isOpen={true} onClose={onClose} title="Previsualización de Etiqueta" size="sm">
             <div id="label-content" className="w-full max-w-sm mx-auto border-2 border-black p-3 space-y-2 text-xs bg-white text-black">
-                <div className="flex items-center space-x-3 border-b border-black pb-2">
-                    <img src={company.print_logo} alt="Logo" className="h-10 w-auto" />
-                    <h1 className="font-bold text-sm">{company.name}</h1>
+                <div className="flex items-center justify-between border-b border-black pb-2">
+                    <div className="flex items-center space-x-2">
+                        <img src={displayInfo.logo} alt="Logo" className="h-10 w-auto" />
+                        <h1 className="font-bold text-[10px] leading-tight max-w-[120px]">{displayInfo.name}</h1>
+                    </div>
+                    {displayInfo.teacherLogo && (
+                        <div className="flex flex-col items-end">
+                            <img src={displayInfo.teacherLogo} alt="Teacher Logo" className="h-8 w-auto" />
+                            <span className="text-[8px] italic">{displayInfo.teacher}</span>
+                        </div>
+                    )}
                 </div>
                 <div>
                     <h2 className="text-center font-bold text-base uppercase tracking-wide">{recipe.name}</h2>
@@ -261,21 +279,30 @@ export const RecipeForm: React.FC = () => {
                                 </div>
                                 <div className="md:w-2/3 space-y-4">
                                     <input type="text" placeholder="Nombre de la Ficha" value={formState.name} onChange={handleFormChange} name="name" required className="w-full text-xl font-bold p-2 border-b-2"/>
-                                    <div className="flex gap-4">
+                                    <div className="flex gap-4 items-center">
                                         <input type="number" placeholder="Raciones" value={formState.yield_amount} onChange={handleFormChange} name="yield_amount" min="1" className="w-1/3 p-2 border rounded"/>
                                         <input type="text" placeholder="Unidad" value={formState.yield_unit} onChange={handleFormChange} name="yield_unit" className="w-1/3 p-2 border rounded"/>
-                                        <select 
-                                            name="category" 
-                                            value={formState.category} 
-                                            onChange={handleFormChange} 
-                                            className="w-1/3 p-2 border rounded dark:bg-gray-700"
-                                            required
-                                        >
-                                            <option value="">Seleccionar Categoría</option>
-                                            {categories.map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                        </select>
+                                        <div className="w-1/3 flex items-center space-x-2">
+                                            <select 
+                                                name="category" 
+                                                value={formState.category} 
+                                                onChange={handleFormChange} 
+                                                className="flex-1 p-2 border rounded dark:bg-gray-700"
+                                                required
+                                            >
+                                                <option value="">Categoría</option>
+                                                {categories.map(cat => (
+                                                    <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                            </select>
+                                            {formState.category && workspaceSettings?.categoryConfigs?.find(c => c.name === formState.category) && (
+                                                <div className="flex -space-x-2">
+                                                    {workspaceSettings.categoryConfigs.find(c => c.name === formState.category)?.colors.map((color, i) => (
+                                                        <div key={i} className="w-4 h-4 rounded-full border border-white shadow-sm" style={{ backgroundColor: color }} />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     <textarea placeholder="Descripción corta" value={formState.description} onChange={handleFormChange} name="description" rows={2} className="w-full p-2 border rounded" />
                                 </div>

@@ -78,6 +78,12 @@ export const RecipeManager: React.FC = () => {
 
     const myRecipes = useMemo(() => filteredRecipes.filter(r => r.author_id === currentUser?.id), [filteredRecipes, currentUser]);
     const publicRecipes = useMemo(() => filteredRecipes.filter(r => r.is_public && r.author_id !== currentUser?.id), [filteredRecipes, currentUser]);
+    const { workspaceSettings } = useData();
+
+    const getCategoryColors = (categoryName: string) => {
+        const config = workspaceSettings?.categoryConfigs?.find(c => c.name === categoryName);
+        return config?.colors || [];
+    };
 
     const handleDuplicate = (recipe: Recipe) => {
         if (!currentUser) return;
@@ -138,20 +144,33 @@ export const RecipeManager: React.FC = () => {
                 <h2 className="text-2xl font-semibold mb-3">Mis Fichas</h2>
                 {myRecipes.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {myRecipes.map(recipe => (
-                            <div key={recipe.id} className="p-4 border rounded-lg dark:border-gray-600 shadow-sm bg-blue-50 dark:bg-blue-900/20">
-                                <h3 className="font-bold text-lg">{recipe.name}</h3>
-                                <p className="text-sm text-gray-500 truncate">{recipe.description}</p>
-                                <div className="mt-2 text-xs">
-                                    <span>Coste: {recipe.cost.toFixed(2)}€</span>
-                                    <span className="ml-4">Precio: {recipe.price.toFixed(2)}€</span>
+                        {myRecipes.map(recipe => {
+                            const colors = getCategoryColors(recipe.category);
+                            return (
+                                <div key={recipe.id} className="p-4 border rounded-lg dark:border-gray-600 shadow-sm bg-blue-50 dark:bg-blue-900/20 relative overflow-hidden">
+                                    {colors.length > 0 && (
+                                        <div className="absolute top-0 left-0 w-full h-1 flex">
+                                            {colors.map((c, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: c }} />)}
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="font-bold text-lg">{recipe.name}</h3>
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/50 dark:bg-black/20 font-medium">
+                                            {recipe.category}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 truncate">{recipe.description}</p>
+                                    <div className="mt-2 text-xs">
+                                        <span>Coste: {recipe.cost.toFixed(2)}€</span>
+                                        <span className="ml-4">Precio: {recipe.price.toFixed(2)}€</span>
+                                    </div>
+                                    <div className="text-right mt-2 no-print flex justify-end items-center space-x-3">
+                                         <button onClick={() => setRecipeToShare(recipe)} title="Compartir" className="text-gray-500 hover:text-primary-600"><ShareIcon className="w-5 h-5"/></button>
+                                         <Link to={`/teacher/recipes/edit/${recipe.id}`} title="Editar" className="text-primary-600 hover:underline"><PencilIcon className="w-5 h-5"/></Link>
+                                    </div>
                                 </div>
-                                <div className="text-right mt-2 no-print flex justify-end items-center space-x-3">
-                                     <button onClick={() => setRecipeToShare(recipe)} title="Compartir" className="text-gray-500 hover:text-primary-600"><ShareIcon className="w-5 h-5"/></button>
-                                     <Link to={`/teacher/recipes/edit/${recipe.id}`} title="Editar" className="text-primary-600 hover:underline"><PencilIcon className="w-5 h-5"/></Link>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <p className="text-gray-500">No tienes recetas. <Link to="/teacher/recipes/new" className="text-primary-600 hover:underline">¡Crea la primera!</Link></p>
@@ -161,17 +180,30 @@ export const RecipeManager: React.FC = () => {
                 <h2 className="text-2xl font-semibold mt-8 mb-3">Fichas Públicas</h2>
                  {publicRecipes.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {publicRecipes.map(recipe => (
-                            <div key={recipe.id} className="p-4 border rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
-                                <h3 className="font-bold text-lg">{recipe.name}</h3>
-                                <p className="text-sm text-gray-500 truncate">{recipe.description}</p>
-                                <p className="text-xs text-gray-400 mt-1">Autor: {usersMap.get(recipe.author_id)?.name || 'Desconocido'}</p>
-                                <div className="text-right mt-2 no-print flex justify-end items-center space-x-3">
-                                     <button onClick={() => setRecipeToShare(recipe)} title="Compartir" className="text-gray-500 hover:text-primary-600"><ShareIcon className="w-5 h-5"/></button>
-                                     <button onClick={() => handleDuplicate(recipe)} className="text-sm bg-green-600 text-white py-1 px-3 rounded-md hover:bg-green-700">Hacer Mía</button>
+                        {publicRecipes.map(recipe => {
+                            const colors = getCategoryColors(recipe.category);
+                            return (
+                                <div key={recipe.id} className="p-4 border rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 relative overflow-hidden">
+                                    {colors.length > 0 && (
+                                        <div className="absolute top-0 left-0 w-full h-1 flex">
+                                            {colors.map((c, i) => <div key={i} className="flex-1 h-full" style={{ backgroundColor: c }} />)}
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="font-bold text-lg">{recipe.name}</h3>
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/50 dark:bg-black/20 font-medium">
+                                            {recipe.category}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 truncate">{recipe.description}</p>
+                                    <p className="text-xs text-gray-400 mt-1">Autor: {usersMap.get(recipe.author_id)?.name || 'Desconocido'}</p>
+                                    <div className="text-right mt-2 no-print flex justify-end items-center space-x-3">
+                                         <button onClick={() => setRecipeToShare(recipe)} title="Compartir" className="text-gray-500 hover:text-primary-600"><ShareIcon className="w-5 h-5"/></button>
+                                         <button onClick={() => handleDuplicate(recipe)} className="text-sm bg-green-600 text-white py-1 px-3 rounded-md hover:bg-green-700">Hacer Mía</button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <p className="text-gray-500">No hay otras recetas públicas disponibles.</p>

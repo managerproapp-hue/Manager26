@@ -56,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             let userData = userDoc.data() as User;
+            let needsUpdate = false;
             // Migration for users created before the change
             if (userData.profiles.includes(Profile.STUDENT) && !userData.classroom_id && !SUPER_USER_EMAILS.includes(userData.email)) {
                userData = {
@@ -63,7 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                  profiles: [Profile.TEACHER],
                  activity_status: 'De Baja'
                };
-               await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+               needsUpdate = true;
+            }
+            // Ensure workspaceId exists
+            if (!userData.workspaceId) {
+              userData.workspaceId = firebaseUser.uid;
+              needsUpdate = true;
+            }
+            if (needsUpdate) {
+              await setDoc(doc(db, 'users', firebaseUser.uid), userData);
             }
             setCurrentUser(userData);
           } else {
@@ -77,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               profiles: isSuperUser 
                 ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
                 : [Profile.TEACHER], // Default to Teacher so they appear in TeacherManager
+              workspaceId: firebaseUser.uid, // Set workspaceId to UID by default
               activity_status: isSuperUser ? 'Activo' : 'De Baja', // Default to inactive
               location_status: 'En el centro',
               avatar: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`
@@ -118,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           profiles: isSuperUser 
             ? [Profile.CREATOR, Profile.ADMIN, Profile.TEACHER, Profile.ALMACEN, Profile.STUDENT] 
             : [Profile.TEACHER], // Default to Teacher so they appear in TeacherManager
+          workspaceId: result.user.uid,
           activity_status: isSuperUser ? 'Activo' : 'De Baja', // Default to inactive
           location_status: 'En el centro',
           avatar: result.user.photoURL || `https://i.pravatar.cc/150?u=${result.user.uid}`
@@ -165,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: phone,
         allergens: allergens,
         profiles: [Profile.CUSTOMER],
+        workspaceId: result.user.uid,
         activity_status: 'Activo',
         location_status: 'Fuera del centro',
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`

@@ -156,6 +156,15 @@ export const TakeawayCatalog: React.FC = () => {
                 </h1>
                 
                 <div className="flex items-center gap-4">
+                    {!currentUser && (
+                        <Link 
+                            to="/login?mode=takeaway"
+                            className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                        >
+                            <UserIcon className="w-5 h-5 mr-2" />
+                            <span className="font-medium">Identificarse / Registro</span>
+                        </Link>
+                    )}
                     {currentUser && (
                         <Link 
                             to="/student/my-reservations"

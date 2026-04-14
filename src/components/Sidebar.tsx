@@ -74,6 +74,15 @@ const teacherNav = [
   { name: 'Mi Perfil', href: '/teacher/profile', icon: <ProfileIcon /> },
 ];
 
+const salesManagerNav = [
+  { name: 'Panel de control', href: '/sales_manager/dashboard', icon: <ComputerDesktopIcon /> },
+  { name: 'Catálogo de Ventas', href: '/sales_manager/takeaway-catalog', icon: <ShoppingCartIcon /> },
+  { name: 'Gestión de Reservas', href: '/sales_manager/reservations', icon: <ClipboardDocumentListIcon /> },
+  { name: 'Ventas Realizadas', href: '/sales_manager/sales-history', icon: <CurrencyEuroIcon /> },
+  { name: 'Mensajería', href: '/sales_manager/messaging', icon: <MessageIcon /> },
+  { name: 'Mi Perfil', href: '/sales_manager/profile', icon: <ProfileIcon /> },
+];
+
 const rewriteStudentNav = (nav: typeof teacherNav | typeof almacenNav, newPrefix: string) => {
   return nav.map(item => {
     let newItemHref = item.href;
@@ -139,6 +148,9 @@ export const Sidebar: React.FC = () => {
           { name: 'Mi Perfil', href: '/student/profile', icon: <ProfileIcon /> },
       ];
       break;
+    case Profile.SALES_MANAGER:
+      navItems = salesManagerNav;
+      break;
     default:
       navItems = [];
   }
@@ -167,6 +179,15 @@ export const Sidebar: React.FC = () => {
             <span className="truncate">{item.name}</span>
           </NavLink>
         ))}
+        {currentUser && currentUser.profiles.length > 1 && (
+            <NavLink
+                to="/select-profile"
+                className={navLinkClasses}
+            >
+                <span className="mr-3 w-6 h-6 shrink-0"><UsersIcon /></span>
+                <span className="truncate">Cambiar Perfil</span>
+            </NavLink>
+        )}
       </nav>
       <div className="px-4 py-4 border-t border-gray-700/50 text-center text-xs text-gray-500 flex flex-col items-center space-y-2">
         <img src={creatorInfo.logo} alt="Logo del Creador" className="h-10 w-10 rounded-full object-cover" />
