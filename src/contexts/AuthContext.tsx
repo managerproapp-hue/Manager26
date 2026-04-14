@@ -215,7 +215,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const currentPath = location.pathname;
       const isProfilePage = currentPath.endsWith('/profile');
 
-      if (isProfilePage) {
+      if (profile === 'customer') {
+        navigate('/student/takeaway-catalog');
+      } else if (isProfilePage) {
         navigate(`/${profile}/profile`);
       } else {
         navigate(`/${profile}/dashboard`);

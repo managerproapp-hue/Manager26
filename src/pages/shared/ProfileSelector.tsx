@@ -13,7 +13,11 @@ export const ProfileSelector: React.FC = () => {
     if (isAuthReady && currentUser && selectedProfile) {
       if (currentUser.profiles.includes(selectedProfile)) {
         console.log('ProfileSelector - Profile already selected, redirecting to dashboard:', selectedProfile);
-        navigate(`/${selectedProfile}/dashboard`);
+        if (selectedProfile === 'customer') {
+          navigate('/student/takeaway-catalog');
+        } else {
+          navigate(`/${selectedProfile}/dashboard`);
+        }
       }
     }
   }, [isAuthReady, currentUser, selectedProfile, navigate]);
