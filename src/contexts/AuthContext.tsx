@@ -168,7 +168,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const registerWithEmail = async (email: string, password: string, name: string, phone: string, allergens: string[]): Promise<boolean> => {
     try {
+      console.log('Attempting registration for:', email);
       const result = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('User created in Firebase Auth:', result.user.uid);
+      
       const newUser: User = {
         id: result.user.uid,
         email: email,
@@ -181,12 +184,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         location_status: 'Fuera del centro',
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
       };
+      
+      console.log('Attempting to create user document in Firestore:', newUser);
       await setDoc(doc(db, 'users', result.user.uid), newUser);
+      console.log('User document created successfully');
+      
       setCurrentUser(newUser);
       setSelectedProfile(Profile.CUSTOMER);
       return true;
     } catch (error) {
-      console.error('Email registration error:', error);
+      console.error('Email registration error details:', error);
       return false;
     }
   };
