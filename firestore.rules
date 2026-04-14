@@ -32,6 +32,10 @@ service cloud.firestore {
       return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profiles.hasAny(['teacher', 'admin', 'creator']);
     }
 
+    function isSalesManager() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profiles.hasAny(['sales_manager', 'admin', 'creator']);
+    }
+
     function isStudent() {
       return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profiles.hasAny(['student', 'admin', 'creator']);
     }
@@ -210,8 +214,8 @@ service cloud.firestore {
     match /reservations/{reservationId} {
       allow read: if isAuthenticated();
       allow create: if validString('user_name', 1, 100) && request.resource.data.quantity is number && request.resource.data.quantity > 0;
-      allow update: if isAuthenticated() && (isTeacher() || isOwner(resource.data.user_id));
-      allow delete: if isAdmin() || isTeacher();
+      allow update: if isAuthenticated() && (isTeacher() || isSalesManager() || isOwner(resource.data.user_id));
+      allow delete: if isAdmin() || isTeacher() || isSalesManager();
     }
   }
 }

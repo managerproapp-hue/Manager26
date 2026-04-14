@@ -110,6 +110,23 @@ export const Sidebar: React.FC = () => {
     case Profile.CREATOR:
       navItems = creatorNav;
       break;
+    case Profile.STUDENT:
+      if (currentUser?.student_simulated_profile === Profile.TEACHER) {
+          navItems = rewriteStudentNav(teacherNav.filter(item => item.name !== 'Aula de Almacén'), '/student');
+      } else if (currentUser?.student_simulated_profile === Profile.ALMACEN) {
+          navItems = rewriteStudentNav(almacenNav, '/student');
+      } else {
+          navItems = [
+              { name: 'Panel de control', href: '/student/dashboard', icon: <ComputerDesktopIcon /> },
+              { name: 'Catálogo de Ventas', href: '/student/takeaway-catalog', icon: <ShoppingCartIcon /> },
+              { name: 'Mis Reservas', href: '/student/my-reservations', icon: <ClipboardDocumentListIcon /> },
+          ];
+      }
+      // Add My Reservations to simulated profiles too
+      if (currentUser?.student_simulated_profile) {
+          navItems.push({ name: 'Mis Reservas', href: '/student/my-reservations', icon: <ClipboardDocumentListIcon /> });
+      }
+      break;
     default:
       navItems = [];
   }

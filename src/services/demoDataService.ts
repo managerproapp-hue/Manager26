@@ -143,7 +143,7 @@ export const demoData: AppData = {
         }
     ],
     reservations: [
-        { id: 'res-1', sale_item_id: 'sale-item-1', user_id: 'student-2', user_name: 'Elena Rodriguez', quantity: 1, created_at: new Date().toISOString() }
+        { id: 'res-1', sale_item_id: 'sale-item-1', user_id: 'student-2', user_name: 'Elena Rodriguez', quantity: 1, status: 'pendiente', created_at: new Date().toISOString() }
     ],
     mini_economato_stock: [
         { id: 'prod-2', stock: 50, min_stock: 20 },

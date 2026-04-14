@@ -5,9 +5,10 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Reservation, SaleItem } from '../../types';
 import { ALLERGEN_ICONS } from '../../lib/allergens';
-import { AlertTriangle, Calendar, Clock, User as UserIcon, ShoppingCart, X, Plus, Minus } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock, User as UserIcon, ShoppingCart, X, Plus, Minus, ClipboardList } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import { AllergenSelector } from '../teacher/RecipeForm';
+import { Link } from 'react-router-dom';
 
 const DAYS_OF_WEEK = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -110,6 +111,7 @@ export const TakeawayCatalog: React.FC = () => {
             allergens: details.allergens,
             quantity: cartItem.quantity,
             notes: details.notes,
+            status: 'pendiente',
             created_at: new Date().toISOString()
         }));
 
@@ -147,17 +149,28 @@ export const TakeawayCatalog: React.FC = () => {
                     Catálogo de Comidas para Llevar
                 </h1>
                 
-                <button 
-                    onClick={() => setIsCartOpen(true)}
-                    className="relative p-3 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors shadow-lg"
-                >
-                    <ShoppingCart className="w-6 h-6" />
-                    {cartItemsCount > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white dark:border-gray-900">
-                            {cartItemsCount}
-                        </span>
+                <div className="flex items-center gap-4">
+                    {currentUser && (
+                        <Link 
+                            to="/student/my-reservations"
+                            className="flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm border border-gray-200 dark:border-gray-700"
+                        >
+                            <ClipboardList className="w-5 h-5 mr-2 hidden sm:block" />
+                            <span className="font-medium">Mis Reservas</span>
+                        </Link>
                     )}
-                </button>
+                    <button 
+                        onClick={() => setIsCartOpen(true)}
+                        className="relative p-3 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors shadow-lg"
+                    >
+                        <ShoppingCart className="w-6 h-6" />
+                        {cartItemsCount > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white dark:border-gray-900">
+                                {cartItemsCount}
+                            </span>
+                        )}
+                    </button>
+                </div>
             </div>
             
             {groupedItems.map(({ day, items }) => (

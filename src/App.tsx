@@ -58,6 +58,7 @@ import { ClassroomList } from './pages/teacher/classroom/ClassroomList';
 import { StudentLayout } from './pages/layouts/StudentLayout';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import { TakeawayCatalog } from './pages/student/TakeawayCatalog';
+import { MyReservations } from './pages/student/MyReservations';
 
 import { Profile } from './types';
 import { useAuth } from './contexts/AuthContext';
@@ -174,6 +175,7 @@ const AppContent: React.FC = () => {
           <Route path="/student" element={<StudentLayout />}>
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="takeaway-catalog" element={<TakeawayCatalog />} />
+              <Route path="my-reservations" element={<MyReservations />} />
               <Route path="teacher-dashboard" element={<TeacherDashboard />} />
               <Route path="order-portal" element={<OrderPortal />} />
               <Route path="order-portal/new/:eventId" element={<OrderForm />} />
